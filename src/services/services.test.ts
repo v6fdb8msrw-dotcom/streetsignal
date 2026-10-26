@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest'
+import { parseNrw } from './landvalue.ts'
+import { classToRange, formatRange } from './noise.ts'
+import { matchEndpoint } from './oparl.ts'
+import { buildQuery, categorize } from './overpass.ts'
+import { parseBerlin, parseHamburg } from './planning.ts'
+
+describe('Lärmklassen', () => {
+  it('übersetzt die EEA-Klassen in dB-Spannen', () => {
+    expect(classToRange('lden', 1)).toEqual([55, 60])
+    expect(classToRange('lden', 5)).toEqual([75, null])
+    expect(classToRange('lnight', 1)).toEqual([50, 55])
+    expect(classToRange('lden', 'NoData')).toBeNull()
+  })
+  it('sagt bei fehlender Klasse nicht „ruhig“', () => {
+    expect(formatRange(null, 'lden')).toBe('unter 55 dB oder nicht kartiert')
+  })
+})
+
+describe('OpenStreetMap', () => {
+  it('ordnet Merkmale den Kategorien zu', () => {
+    expect(categorize({ leisure: 'park', name: 'Grüneburgpark' })).toBe('gruen')
+    expect(categorize({ amenity: 'kindergarten' })).toBe('kita')
+    expect(categorize({ highway: 'bus_stop' })).toBe('oepnv')
+    expect(categorize({ leisure: 'garden', access: 'private' })).toBeNull()
+    expect(categorize({ landuse: 'construction' })).toBe('baustelle')
+  })
+  it('baut eine Abfrage mit Radius', () => {
+    const q = buildQuery(50.1, 8.6, 500)
+    expect(q).toContain('around:500,50.1,8.6')
+    expect(q).toContain('around:1500,50.1,8.6') // Grünflächen weiter suchen
+  })
+})
+
+describe('Bebauungspläne', () => {
+  it('liest Hamburgs Textantwort', () => {
+    const plans = parseHamburg(`hh_hh_festgestellt:
+  geltendes_planrecht: Hamburg-Altstadt47-Neustadt49
+  planrecht: https://example.org/plan.pdf
+  begruendung: https://example.org/begr.pdf
+  feststellungsdatum: 2011-07-05
+`)
+    expect(plans).toEqual([
+      { name: 'Hamburg-Altstadt47-Neustadt49', status: 'festgesetzt', date: '2011-07-05', documentUrl: 'https://example.org/plan.pdf', explanationUrl: 'https://example.org/begr.pdf', sourceId: 'hh_bplan' },
+    ])
+  })
+  it('liest Berlins JSON-Antwort', () => {
+    const [p] = parseBerlin({
+      features: [{ id: 'a_bp_iv.1-23', properties: { 'Name des Plans': '1-23', Geltungsbereich: 'Gelände an der Spree', Rechtsstand: 'Öffentliche Auslegung', 'Aufstellungsbeschluss': '01.02.2024', 'Link zur Planzeichnung': 'https://example.org/1-23.pdf', Inhalte: 'Wohngebiet' } }],
+    })
+    expect(p.status).toBe('im Verfahren')
+    expect(p.name).toBe('1-23 – Gelände an der Spree')
+    expect(p.date).toBe('01.02.2024')
+    expect(p.detail).toContain('Wohngebiet')
+  })
+})
+
+describe('Bodenrichtwerte NRW', () => {
+  it('liest Wert, Stichtag und Nutzung aus der Textantwort', () => {
+    const header = '@brw_mehrgeschossige_bauweiseANL;BKO;BRW;GABE;GENA;NUTA;ORTST;STAG;UDOK_URL;SHAPE_Length;SHAPE_Area;'
+    const values = ' ; ;24000;Der Gutachterausschuss Köln;Köln;MK;Altstadt/Nord;2026-01-01;https://example.org/brw.pdf;1;2;'
+    const [v] = parseNrw(header + values)
+    expect(v.valueEurPerSqm).toBe(24000)
+    expect(v.referenceDate).toBe('2026-01-01')
+    expect(v.usage).toBe('Kerngebiet')
+    expect(v.district).toBe('Altstadt/Nord')
+  })
+  it('liefert nichts bei „No features found“', () => {
+    expect(parseNrw('No features found')).toEqual([])
+  })
+})
+
+describe('OParl', () => {
+  const eps = [
+    { title: 'Stadt Köln', url: 'https://k/system' },
+    { title: 'München Transparent', url: 'https://m' },
+    { title: 'Stadt Bad Münstereifel', url: 'https://b' },
+  ]
+  it('findet die Kommune', () => {
+    expect(matchEndpoint(eps, 'Köln')?.url).toBe('https://k/system')
+    expect(matchEndpoint(eps, 'München')?.url).toBe('https://m')
+    expect(matchEndpoint(eps, 'Münster')).toBeNull()
+  })
+})

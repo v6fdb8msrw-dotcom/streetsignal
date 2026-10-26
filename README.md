@@ -1,57 +1,76 @@
 # StreetSignal
 
-Webseite: https://v6fdb8msrw-dotcom.github.io/streetsignal/
+**Discover what surrounds you. Understand what comes next.**
 
-Immobiliensuche für Deutschland, Österreich und die Schweiz: Standort, Zweck, Immobilienart, Miete/Kauf/Pacht,
-Budget und Größe, Lebensstil- und Umgebungswünsche. Karte und Liste zeigen dieselben Treffer.
+StreetSignal zeigt, was eine Wohnung, ein Haus oder ein Grundstück umgibt: kartierter Lärm, Grün, Nahverkehr, Schulen, Ärzte, Bebauungspläne, Bodenrichtwerte, Baustellen und Vorlagen aus dem Stadtrat. Jede Angabe mit Quelle, Datenstand und Aussagekraft. Dazu eine persönliche Karte mit gespeicherten Immobilien und ein Vergleich nach eigenen Gewichtungen.
 
-Läuft komplett lokal, ohne kostenpflichtige Dienste. Kartenkacheln kommen von OpenStreetMap, die Adresssuche
-nutzt optional OpenStreetMap Nominatim (nur auf Klick).
+Webseite (ohne Linkabruf, alles andere funktioniert): https://v6fdb8msrw-dotcom.github.io/streetsignal/
+
+## Kostenlos und lokal
+
+- Keine Kreditkarte, kein Konto, keine kostenpflichtige API, kein API-Schlüssel.
+- Alle Daten bleiben im Browser (IndexedDB). Export und Löschen unter „Datenquellen & Einstellungen“.
+- KI ist optional und lokal: Läuft [Ollama](https://ollama.com) auf dem Rechner, kann ein lokales Modell die belegten Fakten zusammenfassen. Ohne Ollama fasst StreetSignal regelbasiert zusammen.
 
 ## Starten
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm test         # Suchlogik-Tests
-npm run build    # Produktions-Build nach dist/
-npm run deploy   # Tests, Build und Webseite auf GitHub Pages aktualisieren
+npm run dev        # App auf http://localhost:5191 und Import-Server auf 127.0.0.1:5187
+npm test           # Tests (Texterkennung, SSRF-Schutz, Quellen-Parser, Filter, Vergleich)
+npm run build      # Produktions-Build nach dist/
+npm run deploy     # Tests + Build + Veröffentlichung auf GitHub Pages (Zweig gh-pages)
 ```
+
+## Bereiche
+
+| Bereich | Was er tut |
+|---|---|
+| Startseite | Bildstarker Einstieg mit Adresssuche |
+| Übersicht | Persönliche Karte mit allen gespeicherten Immobilien |
+| Umgebung erkunden | Adresse oder Kartenpunkt, Umkreis 250 m bis 3 km, Analyse mit allen Quellen, zuschaltbare Kartenebenen |
+| Immobilie hinzufügen | Per Link, eingefügtem Text, PDF/Screenshot (lokal per PDF.js/Tesseract) oder Formular; jeder Wert mit Herkunft, vor dem Speichern prüfbar |
+| Meine Immobilien | Profile, Status, Notizen, Filter (Wo, Was, Art, Miete/Kauf, Budget, Größe, Umgebung als Muss/Wunsch), Suchprofile |
+| Vergleichen | Bis zu vier Objekte, eigene Gewichtungen, vollständig offengelegte Punkterechnung |
+| Neue Entwicklungen | Planungen, Baustellen und Ratsvorlagen je Ort; manuelle Prüfung mit Änderungsübersicht |
+| Datenquellen & Einstellungen | Alle Quellen mit Lizenz, freigegebene Domains, Ollama-Status, Datenexport |
+
+## Rechtliche Leitplanken
+
+- **Keine Portale werden ausgelesen.** ImmobilienScout24, Kleinanzeigen, Immowelt, Immonet, WG-Gesucht, willhaben, Homegate, ImmoScout24.ch, Flatfox, Newhome, Comparis: Link wird gespeichert, Angaben übernimmt man per Text, Dokument oder Formular.
+- **Linkabruf nur nach Freigabe.** Der lokale Server ruft eine Seite nur ab, wenn du ihre Domain ausdrücklich freigegeben hast (nach Prüfung der Nutzungsbedingungen) und ihre robots.txt es erlaubt. Gelesen werden nur schema.org- und Open-Graph-Angaben sowie der sichtbare Text; Kontaktdaten werden nicht übernommen.
+- **Schutz gegen SSRF:** nur http/https auf Port 80/443, keine internen oder privaten Adressen (auch nicht nach DNS-Auflösung oder Weiterleitung), feste IP je Abruf, höchstens 2 MB, 10 Sekunden, 3 Weiterleitungen, keine Skriptausführung, Server lauscht nur auf 127.0.0.1.
+- **Nur lizenzierte Daten:** Jede Quelle steht mit Lizenz und Pflichtvermerk in [docs/QUELLEN.md](docs/QUELLEN.md). Quellen ohne veröffentlichte Lizenz (z. B. die Autobahn-Schnittstelle) werden nur verlinkt.
+- **Nichts wird erfunden:** Fehlende Werte bleiben „unbekannt“. Ein bloß gespeicherter Link gilt nicht als Import. Keine Demo-Inserate.
+- **Faire Nutzung öffentlicher Dienste:** Photon höchstens einmal pro Sekunde, Overpass nur auf Klick mit Wartezeiten bei Überlastung, alle Antworten werden zwischengespeichert.
 
 ## Aufbau
 
 ```
-src/model/       typisiertes Datenmodell
-  provenance.ts  Herkunft jeder Angabe: Quelle, Nutzer, extrahiert, KI-Vermutung, nicht verfügbar
-  taxonomy.ts    Zwecke, Transaktionen, Immobilienarten (Registry, erweiterbar)
-  criteria.ts    Wohnstil-, Umgebungs- und Ausstattungskriterien mit sichtbarer Messregel
-  listing.ts     Inserat, Standortgenauigkeit, Umgebungsdaten (GeoContext)
-  query.ts       Suchanfrage, Suchgebiete, Muss/Wunsch, Suchprofile
-  geo.ts         Entfernungen, lokales Ortsverzeichnis, Landschaftsräume (Alpen, Küsten, Seen)
-src/data/        Quellenverzeichnis, Beispielinserate (erfunden), Builder für Import
-src/search/      Suchlogik + Tests
-src/store/       Zustand (zustand), gespeichert im Browser
-src/ui/          Filterpanel (7 Schritte), Karte (Leaflet), Ergebnisliste, Dialoge
+src/
+  pages/        Landing, Overview, Explore, AddProperty, MyProperties, Compare, Developments, Sources
+  components/   Rail, AddressSearch, ReportView, PropertyDetail, FilterPanel, Prov
+  map/          MapView (MapLibre + OpenFreeMap), Kartenstil, Kartenebenen
+  services/     geocode (Photon), overpass, noise (EEA), planning (Hamburg, Berlin), landvalue (NRW),
+                oparl, environment (Analyse, Zusammenfassung, Änderungen), ollama, wms, http
+  import/       parseText (Inseratstext), document (PDF/OCR), linkImport
+  search/       filter (Muss/Wunsch), compare (Gewichtung)
+  sources/      registry: Datenquellen und Portalregeln
+  store/        IndexedDB, Oberflächenzustand
+  model/        Immobilienprofil, Herkunft, Kategorien, Filter
+server/         lokaler Import-Server mit SSRF-Schutz
+tools/          deploy-pages.mjs
+public/images/  Fotos (Unsplash, siehe CREDITS.md)
 ```
 
-## Grundregeln der Suche
+## Bekannte Einschränkungen
 
-- **Muss-Kriterien filtern, Wünsche sortieren nur.** Sortiert wird nach der Anzahl erfüllter Wünsche, kein verdeckter Score.
-- **Unbekannt ist nie erfüllt.** Fehlende Flächen, Preise oder Merkmale schließen ein Objekt aus, außer der Nutzer schließt unbekannte Werte ausdrücklich ein (dann wird es markiert).
-- **Unsichere Angaben** (aus Text extrahiert, aus Fotos vermutet) zählen für Muss-Kriterien nur, wenn der Nutzer das erlaubt.
-- **Nah ≠ direkt:** „Nähe zu Seen“ (≤ 2 km) und „direkte Uferlage“ (Grundstück grenzt laut Quelle ans Wasser) sind getrennte Kriterien.
-- **Keine Währungsumrechnung:** Eine Preisgrenze in EUR gilt nicht für Angebote in CHF.
-- **Standortgenauigkeit:** Objekte mit nur PLZ oder Ort bekommen auf der Karte einen Unschärfekreis.
-
-## Erweitern
-
-- Neue Immobilienart: Eintrag in `CATEGORIES` (`src/model/taxonomy.ts`).
-- Neues Umgebungs- oder Ausstattungskriterium: Eintrag in `CRITERIA` (`src/model/criteria.ts`), die Messregel ist ein Datenobjekt (`Measure`).
-- Neue Quelle: Eintrag in `SOURCES` (`src/data/sources.ts`). Nur mit `integrated: true` fließen Angebote in die Suche, und nur, wenn die Abfrage rechtlich und technisch zulässig ist.
-- Import: Quellen-Dialog → JSON-Datei im Format von `Spec` (`src/data/build.ts`).
-
-## Offene Punkte
-
-- Umgebungsdaten sind in den Beispieldaten vorberechnet. Für echte Objekte fehlt noch ein Geo-Dienst, der Entfernungen aus einem lokalen OpenStreetMap-Auszug berechnet (Schnittstelle: `GeoContext`).
-- Benachrichtigungen bei neuen Treffern sind im Profil vorgemerkt, aber erst sinnvoll, wenn eine Quelle mit zulässigem Feed angebunden ist.
-- Land- und Regionsgrenzen werden nicht auf der Karte gezeichnet (Filter über die Adresse).
+- **Bebauungspläne** sind nur für Hamburg und Berlin angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
+- **Bodenrichtwerte** sind nur für NRW angebunden (Hessens kostenfreier Dienst antwortet derzeit fehlerhaft); andernorts Link zu BORIS. Österreich und die Schweiz haben kein vergleichbares offenes System.
+- **Lärm:** EU-Kartierung 2022 deckt Ballungsräume und Hauptverkehrswege ab; „keine Klasse“ heißt nicht „ruhig“. Zusätzlich wird ein Ring von 75 m abgetastet.
+- **Baustellen** kommen aus OpenStreetMap und sind unvollständig; Autobahn-Baustellen nur als Link.
+- **Ratsvorlagen** gibt es nur für Kommunen mit OParl-Schnittstelle; Vorlagen sind nicht verortet.
+- **Overpass** (OpenStreetMap) ist ein öffentlicher, teils überlasteter Dienst; dann bitte später „Neu prüfen“.
+- **Auf GitHub Pages** gibt es keinen Import-Server; Linkabruf geht nur lokal mit `npm run dev`.
+- **Automatische Beobachtung** ist vorbereitet, aber deaktiviert, solange keine Quelle wiederholte Abrufe ausdrücklich erlaubt.
+- **Lizenz des Codes:** Noch keine Lizenzdatei. Bis eine gewählt ist, gilt: Code ansehen ja, übernehmen nein.

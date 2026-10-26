@@ -1,0 +1,37 @@
+/* Design-Tokens laut Master-Prompt Abschnitt 13. Bewusst nur hell: kein automatischer Dunkelmodus. */
+:root {
+  --forest: #183f32;
+  --pine: #102d26;
+  --sage: #a9b9a1;
+  --mint: #dce9d7;
+  --ivory: #f7f5ee;
+  --sand: #ede6d8;
+  --graphite: #242d29;
+
+  --text: var(--graphite);
+  --text-2: #55615b;
+  --text-3: #86918b;
+  --line: rgb(24 63 50 / 11%);
+  --line-strong: rgb(24 63 50 / 22%);
+  --surface: #fffefa;
+  --surface-2: var(--ivory);
+  --accent: var(--forest);
+  --accent-ink: #f7f5ee;
+  --warn: #a8641e;
+  --warn-soft: #f6ead7;
+  --bad: #9c3b2f;
+  --bad-soft: #f5e1dc;
+  --ok: #2f6b45;
+
+  --shadow-sm: 0 1px 2px rgb(16 45 38 / 6%);
+  --shadow: 0 1px 2px rgb(16 45 38 / 5%), 0 12px 32px -12px rgb(16 45 38 / 18%);
+  --shadow-lg: 0 2px 6px rgb(16 45 38 / 6%), 0 32px 64px -24px rgb(16 45 38 / 32%);
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 26px;
+
+  --font-display: 'Sora Variable', 'Sora', system-ui, sans-serif;
+  --font-body: 'Manrope Variable', 'Manrope', system-ui, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  color-scheme: light;
+}

@@ -1,13 +1,6 @@
-import type { LatLng } from './listing.ts'
+// Filter und Suchprofile für die gespeicherten Immobilien (Erweiterung „Intelligente Suche“, Punkte 2–13).
+import type { PersonalStatus } from './property.ts'
 import type { Country, Currency, Purpose, Transaction } from './taxonomy.ts'
-
-/** Ein Suchgebiet. Mehrere Gebiete werden mit ODER verknüpft (Punkt 2). */
-export type SearchArea =
-  | { id: string; kind: 'country'; country: Country }
-  | { id: string; kind: 'region'; country: Country; region: string }
-  | { id: string; kind: 'city'; placeId: string; label: string; center: LatLng; country: Country; city: string; radiusKm: number; wholeCity: boolean }
-  | { id: string; kind: 'radius'; label: string; center: LatLng; radiusKm: number }
-  | { id: string; kind: 'landscape'; landscapeId: string; label: string }
 
 export type CriterionMode = 'must' | 'wish'
 
@@ -16,81 +9,51 @@ export interface CriterionSelection {
   mode: CriterionMode
 }
 
-/** Persönliches Ziel (Arbeitsplatz, Schule der Kinder …), Punkt 7E */
-export interface PersonalTarget {
-  id: string
-  label: string
-  position: LatLng
-  maxKm: number
-  mode: CriterionMode
-}
-
-export type PriceBasis = 'auto' | 'kalt' | 'warm' | 'kauf' | 'pacht'
-
 export interface Range {
   min: number | null
   max: number | null
 }
 
-export interface SearchQuery {
-  areas: SearchArea[]
+export interface PropertyFilter {
+  countries: Country[]
+  /** Umkreis um einen Punkt (z. B. Frankfurt + 25 km) */
+  area: { label: string; lat: number; lng: number; radiusKm: number } | null
   purposes: Purpose[]
   transactions: Transaction[]
   categories: string[]
-  price: Range & { basis: PriceBasis; perSqm: boolean; currency: Currency }
+  price: Range & { currency: Currency }
   livingArea: Range
   plotArea: Range
-  rooms: Range
-  bedroomsMin: number | null
-  /** Unbekannte Werte trotzdem einschließen (Punkt 8) */
-  includeUnknown: { price: boolean; livingArea: boolean; plotArea: boolean; rooms: boolean; mustCriteria: boolean }
-  /** Extrahierte und KI-vermutete Angaben für Muss-Kriterien zulassen */
-  allowUncertain: boolean
+  roomsMin: number | null
+  statuses: PersonalStatus[]
   criteria: CriterionSelection[]
-  targets: PersonalTarget[]
-  /** leere Liste = alle integrierten Quellen */
-  sources: string[]
-  sort: SortKey
-  groupDuplicates: boolean
+  /** Objekte mit unbekannten Werten trotzdem zeigen (markiert) */
+  includeUnknown: boolean
+  sort: 'wishes' | 'price_asc' | 'price_desc' | 'area_desc' | 'newest'
 }
 
-export type SortKey = 'wishes' | 'price_asc' | 'price_desc' | 'area_desc' | 'newest'
-
-export const SORT_LABEL: Record<SortKey, string> = {
-  wishes: 'Erfüllte Wünsche',
-  price_asc: 'Preis aufsteigend',
-  price_desc: 'Preis absteigend',
-  area_desc: 'Fläche absteigend',
-  newest: 'Neueste zuerst',
-}
-
-export function emptyQuery(): SearchQuery {
+export function emptyFilter(): PropertyFilter {
   return {
-    areas: [],
+    countries: [],
+    area: null,
     purposes: [],
     transactions: [],
     categories: [],
-    price: { min: null, max: null, basis: 'auto', perSqm: false, currency: 'EUR' },
+    price: { min: null, max: null, currency: 'EUR' },
     livingArea: { min: null, max: null },
     plotArea: { min: null, max: null },
-    rooms: { min: null, max: null },
-    bedroomsMin: null,
-    includeUnknown: { price: false, livingArea: false, plotArea: false, rooms: false, mustCriteria: false },
-    allowUncertain: false,
+    roomsMin: null,
+    statuses: ['neu', 'interessant', 'favorit'],
     criteria: [],
-    targets: [],
-    sources: [],
+    includeUnknown: false,
     sort: 'wishes',
-    groupDuplicates: true,
   }
 }
 
 export interface SavedProfile {
   id: string
   name: string
-  query: SearchQuery
+  filter: PropertyFilter
   createdAt: string
   updatedAt: string
-  /** Vorbereitet: Benachrichtigung nur für Quellen mit zulässigem Feed */
-  notify: boolean
 }

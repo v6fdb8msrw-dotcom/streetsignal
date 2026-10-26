@@ -1,5 +1,7 @@
 # StreetSignal
 
+Webseite: https://v6fdb8msrw-dotcom.github.io/streetsignal/
+
 Immobiliensuche für Deutschland, Österreich und die Schweiz: Standort, Zweck, Immobilienart, Miete/Kauf/Pacht,
 Budget und Größe, Lebensstil- und Umgebungswünsche. Karte und Liste zeigen dieselben Treffer.
 
@@ -13,6 +15,7 @@ npm install
 npm run dev      # http://localhost:5173
 npm test         # Suchlogik-Tests
 npm run build    # Produktions-Build nach dist/
+npm run deploy   # Tests, Build und Webseite auf GitHub Pages aktualisieren
 ```
 
 ## Aufbau

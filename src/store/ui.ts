@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import type { Radius } from '../services/environment.ts'
 
-export type LayerId = 'noise_road' | 'noise_rail' | 'noise_air' | 'noise_regional' | 'bplan' | 'landvalue' | 'pois' | 'properties' | 'radius'
+export type LayerId = 'noise_road' | 'noise_rail' | 'noise_air' | 'noise_regional' | 'bplan' | 'zoning' | 'flood' | 'transit_quality' | 'landvalue' | 'pois' | 'properties' | 'radius'
 
 export interface Focus {
   lat: number
@@ -29,7 +29,7 @@ interface UiState {
 export const useUi = create<UiState>((set) => ({
   focus: null,
   radius: 500,
-  layers: { noise_road: false, noise_rail: false, noise_air: false, noise_regional: false, bplan: false, landvalue: false, pois: true, properties: true, radius: true },
+  layers: { noise_road: false, noise_rail: false, noise_air: false, noise_regional: false, bplan: false, zoning: false, flood: false, transit_quality: false, landvalue: false, pois: true, properties: true, radius: true },
   selectedPropertyId: null,
   dataVersion: 0,
   setFocus: (focus) => set({ focus }),

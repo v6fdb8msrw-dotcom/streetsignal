@@ -1,0 +1,3 @@
+Fahrplandaten: gtfs.de, Daten von DELFI e.V., Creative Commons Namensnennung 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Die Feeds enthalten laut attributions.txt auch Daten von OpenStreetMap-Mitwirkenden (ODbL 1.0, https://opendatacommons.org/licenses/odbl/); soweit diese enthalten sind, gilt für die abgeleiteten Daten die ODbL.
+Aufbereitet von StreetSignal: Abfahrten je Haltestelle am 2026-11-04 (Sollfahrplan). Ohne Gewähr.

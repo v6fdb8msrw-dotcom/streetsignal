@@ -1,6 +1,8 @@
-import { AlertCircle, Bot, Building, ExternalLink, FileText, Landmark, Loader2, MapPinned, Scale, Trees, Volume2 } from 'lucide-react'
+import { AlertCircle, Bot, Building, Droplets, ExternalLink, FileText, Landmark, Loader2, MapPinned, Scale, TrainFront, Trees, Volume2, Wind } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { diffReports, ruleSummary, summarizePois, type EnvReport } from '../services/environment.ts'
+import { EU_LIMIT } from '../services/air.ts'
+import { FLOOD_LABEL, type FloodScenario } from '../services/hazards.ts'
 import { formatRange, NOISE_PERIOD_LABEL, NOISE_SOURCE_LABEL, type NoisePeriod, type NoiseSource } from '../services/noise.ts'
 import { ollamaStatus, summarizeWithOllama } from '../services/ollama.ts'
 import { DATA_SOURCES } from '../sources/registry.ts'
@@ -36,6 +38,11 @@ function Failed({ msg }: { msg: string | null }) {
 }
 
 const autobahn = DATA_SOURCES.find((s) => s.id === 'autobahn')!
+
+const MODES: Record<string, string> = { B: 'Bus', T: 'Tram', U: 'U-Bahn', S: 'S-Bahn', R: 'Regionalbahn', F: 'Fernverkehr', X: 'sonstige' }
+const modeLabel = (m: string) => [...m].map((c) => MODES[c] ?? c).join(', ')
+
+const PLANNING_SOURCE: Record<string, string> = { Hamburg: 'hh_bplan', Berlin: 'be_bplan', Wien: 'wien_fwp', Schweiz: 'ch_bauzonen' }
 
 export function ReportView({ report, previous }: { report: EnvReport; previous?: EnvReport | null }) {
   const { facts, hints, gaps } = ruleSummary(report)
@@ -183,6 +190,126 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
         )}
       </Block>
 
+      <Block icon={<TrainFront size={17} />} title="Verkehrsanbindung (Fahrpläne)">
+        {!report.transit ? (
+          <p className="muted">In dieser älteren Analyse noch nicht enthalten. „Neu prüfen“ ergänzt sie.</p>
+        ) : report.transit.data ? (
+          report.transit.data.covered ? (
+            <>
+              {report.transit.data.ovClass && (
+                <p>
+                  <b>ÖV-Güteklasse: {report.transit.data.ovClass}</b>
+                </p>
+              )}
+              {report.transit.data.departures500 !== null && (
+                <p>
+                  <b>{report.transit.data.departures500.toLocaleString('de-DE')}</b> Abfahrten pro Werktag an Haltestellen bis 500 m
+                  {report.transit.data.partial && ' (nur Fern- und Regionalverkehr)'}
+                </p>
+              )}
+              {report.transit.data.stops.length > 0 && (
+                <ul className="plans">
+                  {report.transit.data.stops.slice(0, 6).map((st) => (
+                    <li key={st.name + st.lat}>
+                      <b>{st.name}</b>
+                      <small>
+                        {dist(st.distanceM)} · {st.departures.toLocaleString('de-DE')} Abfahrten/Werktag · {modeLabel(st.modes)}
+                      </small>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {report.transit.data.nearestLongDistance && (
+                <p className="small">
+                  Nächster Fernverkehrshalt: <b>{report.transit.data.nearestLongDistance.name}</b> in {dist(report.transit.data.nearestLongDistance.distanceM)}
+                </p>
+              )}
+              <p className="fine">{report.transit.data.note}</p>
+              <SourceLine ids={report.transit.data.source === 'oev_gueteklasse' ? ['ch_oev'] : ['gtfs_de']} dataDate={report.transit.data.dataDate ? `Fahrplanstand ${date(report.transit.data.dataDate)}` : null} />
+            </>
+          ) : (
+            <p className="muted">{report.transit.data.note}</p>
+          )
+        ) : report.transit.status === 'loading' ? (
+          <Pending />
+        ) : (
+          <Failed msg={report.transit.error} />
+        )}
+      </Block>
+
+      <Block icon={<Droplets size={17} />} title="Hochwasser">
+        {!report.flood ? (
+          <p className="muted">In dieser älteren Analyse noch nicht enthalten. „Neu prüfen“ ergänzt sie.</p>
+        ) : report.flood.data ? (
+          report.flood.data.covered ? (
+            <>
+              <ul className="flood">
+                {(['haeufig', 'hq100', 'extrem'] as FloodScenario[]).map((sc) => (
+                  <li key={sc} className={report.flood!.data!.inArea[sc] ? 'in' : 'out'}>
+                    <span>{FLOOD_LABEL[sc]}</span>
+                    <b>{report.flood!.data!.inArea[sc] ? 'betroffen' : 'nicht betroffen'}</b>
+                  </li>
+                ))}
+              </ul>
+              <p className="fine">{report.flood.data.note}</p>
+              <SourceLine ids={['bfg_flood']} dataDate={report.flood.data.reportYear ? `Berichtsjahr ${report.flood.data.reportYear}` : null} fetchedAt={report.flood.data.fetchedAt} />
+            </>
+          ) : (
+            <p className="muted">{report.flood.data.note}</p>
+          )
+        ) : report.flood.status === 'loading' ? (
+          <Pending />
+        ) : (
+          <Failed msg={report.flood.error} />
+        )}
+      </Block>
+
+      <Block icon={<Wind size={17} />} title="Luftqualität">
+        {!report.air ? (
+          <p className="muted">In dieser älteren Analyse noch nicht enthalten. „Neu prüfen“ ergänzt sie.</p>
+        ) : report.air.data ? (
+          report.air.data.stations.length ? (
+            <>
+              <table className="noise air">
+                <thead>
+                  <tr>
+                    <th>Station</th>
+                    <th>NO₂</th>
+                    <th>PM10</th>
+                    <th>PM2,5</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.air.data.stations.map((st) => (
+                    <tr key={st.id}>
+                      <td>
+                        {st.name}
+                        <small>
+                          {dist(st.distanceM)} · {st.type}, {st.setting}
+                        </small>
+                      </td>
+                      <td>{st.no2 ?? '–'}</td>
+                      <td>{st.pm10 ?? '–'}</td>
+                      <td>{st.pm25 ?? '–'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="fine">
+                Jahresmittel {report.air.data.year} in µg/m³. Zur Einordnung die EU-Grenzwerte im Jahresmittel: NO₂ {EU_LIMIT.no2}, PM10 {EU_LIMIT.pm10}, PM2,5 {EU_LIMIT.pm25}. {report.air.data.note}
+              </p>
+              <SourceLine ids={['uba_air']} dataDate={`Jahresmittel ${report.air.data.year}`} />
+            </>
+          ) : (
+            <p className="muted">{report.air.data.note}</p>
+          )
+        ) : report.air.status === 'loading' ? (
+          <Pending />
+        ) : (
+          <Failed msg={report.air.error} />
+        )}
+      </Block>
+
       <Block icon={<Landmark size={17} />} title="Bebauungspläne und Planung">
         {report.planning.data ? (
           report.planning.data.covered ? (
@@ -195,8 +322,8 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                       <b>{p.name}</b>
                       {p.detail && <small>{p.detail}</small>}
                       <small>
-                        {p.status === 'festgesetzt' ? 'festgesetzt am ' : p.status === 'im Verfahren' ? 'Aufstellungsbeschluss vom ' : 'Datum: '}
-                        {date(p.date)}
+                        {p.date && (p.status === 'festgesetzt' ? 'festgesetzt am ' : p.status === 'im Verfahren' ? 'Aufstellungsbeschluss vom ' : '')}
+                        {p.date ? (/^\d{4}-\d{2}-\d{2}/.test(p.date) ? date(p.date) : p.date) : ''}
                         {p.documentUrl && (
                           <>
                             {' · '}
@@ -218,10 +345,10 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                   ))}
                 </ul>
               ) : (
-                <p className="muted">Kein Bebauungsplan an diesem Punkt verzeichnet.</p>
+                <p className="muted">{report.planning.data.region === 'Wien' || report.planning.data.region === 'Schweiz' ? 'An diesem Punkt ist keine Widmung bzw. Bauzone verzeichnet.' : 'Kein Bebauungsplan an diesem Punkt verzeichnet.'}</p>
               )}
               <p className="fine">Ein Plan im Verfahren ist keine genehmigte Baumaßnahme. Rechtsverbindlich ist nur das Originaldokument.</p>
-              <SourceLine ids={report.planning.data.region === 'Hamburg' ? ['hh_bplan'] : ['be_bplan']} fetchedAt={report.planning.data.fetchedAt} />
+              <SourceLine ids={[PLANNING_SOURCE[report.planning.data.region ?? ''] ?? 'be_bplan']} fetchedAt={report.planning.data.fetchedAt} />
             </>
           ) : (
             <p className="muted">
@@ -259,7 +386,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                 ))}
               </ul>
               <p className="fine">{report.landValue.data.note}</p>
-              <SourceLine ids={['nrw_boris']} fetchedAt={report.landValue.data.fetchedAt} />
+              <SourceLine ids={[report.landValue.data.portal?.label === 'BORIS Hessen' ? 'he_boris' : 'nrw_boris']} fetchedAt={report.landValue.data.fetchedAt} />
             </>
           ) : (
             <p className="muted">

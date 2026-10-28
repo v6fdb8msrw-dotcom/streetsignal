@@ -36,7 +36,7 @@ function prop(id: string, over: Partial<Property> = {}): Property {
   }
 }
 
-function report(parkM: number | null, noiseClass: number | null): EnvReport {
+function report(parkM: number | null, noiseClass: number | null, flood = false, deps: number | null = null): EnvReport {
   const pois = parkM === null ? [] : [{ id: 'w/1', category: 'gruen' as const, name: 'Park', lat: 0, lng: 0, distanceM: parkM, tags: {}, osmUrl: '' }]
   const values = (['road', 'rail', 'air', 'ind'] as const).flatMap((source) =>
     (['lden', 'lnight'] as const).map((period) => ({ source, period, rawClass: source === 'road' && period === 'lden' ? noiseClass : null, range: source === 'road' && period === 'lden' && noiseClass ? ([50 + noiseClass * 5, 55 + noiseClass * 5] as [number, number]) : null })),
@@ -55,6 +55,9 @@ function report(parkM: number | null, noiseClass: number | null): EnvReport {
     planning: ok({ covered: false, region: null, plans: [], portal: null, fetchedAt: '' }),
     landValue: ok({ covered: false, values: [], portal: null, note: '', fetchedAt: '' }),
     council: ok({ available: false, system: null, papers: [], note: '', fetchedAt: '' }),
+    flood: ok({ covered: true, inArea: { haeufig: false, hq100: flood, extrem: flood }, reportYear: '2016', fetchedAt: '', note: '' }),
+    air: ok({ covered: true, year: 2025, stations: [], note: '' }),
+    transit: ok({ covered: true, source: 'gtfs' as const, ovClass: null, stops: [], departures500: deps, nearestLongDistance: null, dataDate: '2026-10-28', note: '' }),
   }
 }
 
@@ -98,6 +101,20 @@ describe('Filter', () => {
   })
 })
 
+describe('Neue Kriterien', () => {
+  it('Hochwasser und Takt werden gemessen, ohne Daten unbekannt', () => {
+    const props = [prop('trocken'), prop('nass'), prop('ohne')]
+    const reports = new Map([
+      ['trocken', report(200, null, false, 340)],
+      ['nass', report(200, null, true, 40)],
+    ])
+    const f = { ...emptyFilter(), criteria: [{ id: 'kein_hochwasser', mode: 'must' as const }, { id: 'guter_takt', mode: 'wish' as const }] }
+    const res = applyFilter(props, reports, f)
+    expect(res.map((r) => r.property.id)).toEqual(['trocken'])
+    expect(res[0].wishes).toEqual({ yes: 1, total: 1 })
+  })
+})
+
 describe('Vergleich', () => {
   it('rechnet offen nach Gewichtung, unbekannt gibt 0 Punkte', () => {
     const a = prop('a', { coldRent: src(1000), livingArea: src(100) })
@@ -107,7 +124,7 @@ describe('Vergleich', () => {
         { property: a, report: report(100, null) },
         { property: b, report: null },
       ],
-      { ruhe: 1, gruen: 1, oepnv: 0, versorgung: 0, baustellen: 0, preis_qm: 1 },
+      { ruhe: 1, gruen: 1, oepnv: 0, takt: 0, hochwasser: 0, versorgung: 0, baustellen: 0, preis_qm: 1 },
     )
     const ra = rows[0]
     const rb = rows[1]

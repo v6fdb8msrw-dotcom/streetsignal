@@ -53,6 +53,30 @@ export const ENV_CRITERIA: EnvCriterion[] = [
     },
   },
   {
+    id: 'kein_hochwasser',
+    label: 'Außerhalb von Hochwasserflächen (HQ100)',
+    group: 'Ruhe',
+    hint: 'Nicht in einer Hochwassergefahrenfläche bei mittlerem Hochwasser (HQ100) laut BfG. Nur Deutschland; Starkregen nicht enthalten.',
+    evaluate: (r) => {
+      const f = r.flood?.data
+      if (!f?.covered) return { status: 'unknown', evidence: 'Hochwasserdaten fehlen oder nicht abgedeckt' }
+      return f.inArea.hq100 || f.inArea.haeufig ? { status: 'no', evidence: 'in Hochwassergefahrenfläche HQ100' } : { status: 'yes', evidence: f.inArea.extrem ? 'nur bei Extremhochwasser betroffen' : 'nicht betroffen' }
+    },
+  },
+  {
+    id: 'guter_takt',
+    label: 'Dichter Nahverkehrstakt',
+    group: 'Erreichbarkeit',
+    hint: 'Deutschland: mindestens 200 Abfahrten pro Werktag an Haltestellen bis 500 m (Sollfahrplan gtfs.de). Schweiz: ÖV-Güteklasse A oder B.',
+    evaluate: (r) => {
+      const t = r.transit?.data
+      if (!t?.covered) return { status: 'unknown', evidence: 'Fahrplandaten fehlen' }
+      if (t.ovClass !== null) return /^[AB]/.test(t.ovClass) ? { status: 'yes', evidence: `ÖV-Güteklasse ${t.ovClass}` } : { status: 'no', evidence: `ÖV-Güteklasse ${t.ovClass}` }
+      if (t.departures500 === null || t.partial) return { status: 'unknown', evidence: 'Nahverkehr noch nicht aufbereitet' }
+      return { status: t.departures500 >= 200 ? 'yes' : 'no', evidence: `${t.departures500} Abfahrten/Werktag bis 500 m` }
+    },
+  },
+  {
     id: 'keine_baustelle',
     label: 'Keine Baustelle in direkter Nähe',
     group: 'Veränderung',

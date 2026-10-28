@@ -1,7 +1,10 @@
 // Umgebungsanalyse eines Standorts (Master-Prompt Abschnitt 8). Alle Quellen laufen parallel;
 // fällt eine aus, bleibt ihr Abschnitt sichtbar leer mit Grund, statt still zu verschwinden.
 import { dist as fmtM } from '../components/format.ts'
+import { fetchAir, type AirResult } from './air.ts'
 import { reverseGeocode, type GeoResult } from './geocode.ts'
+import { fetchFlood, FLOOD_LABEL, type FloodResult, type FloodScenario } from './hazards.ts'
+import { fetchTransit, type TransitResult } from './transit.ts'
 import { SourceError } from './http.ts'
 import { fetchLandValue, type LandValueResult } from './landvalue.ts'
 import { fetchNoise, formatRange, loudest, NOISE_SOURCE_LABEL, type NoiseResult } from './noise.ts'
@@ -33,6 +36,9 @@ export interface EnvReport {
   planning: Section<PlanningResult>
   landValue: Section<LandValueResult>
   council: Section<CouncilResult>
+  flood: Section<FloodResult>
+  air: Section<AirResult>
+  transit: Section<TransitResult>
 }
 
 async function section<T>(sourceIds: string[], job: () => Promise<T>): Promise<Section<T>> {
@@ -64,6 +70,9 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
     planning: pending(['hh_bplan', 'be_bplan']),
     landValue: pending(['nrw_boris', 'boris_d']),
     council: pending(['oparl']),
+    flood: pending(['bfg_flood']),
+    air: pending(['uba_air']),
+    transit: pending(['gtfs_de', 'ch_oev']),
   }
   const emit = () => onPartial?.({ ...report })
   emit()
@@ -72,16 +81,19 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
   const place = geo && !geo.state && geo.city && ['Berlin', 'Hamburg', 'Bremen'].includes(geo.city) ? { ...geo, state: geo.city } : geo
   report.place = place
   emit()
-  const run = async <K extends 'pois' | 'noise' | 'planning' | 'landValue' | 'council'>(key: K, job: () => Promise<NonNullable<EnvReport[K]['data']>>) => {
+  const run = async <K extends 'pois' | 'noise' | 'planning' | 'landValue' | 'council' | 'flood' | 'air' | 'transit'>(key: K, job: () => Promise<NonNullable<EnvReport[K]['data']>>) => {
     ;(report[key] as Section<unknown>) = await section(report[key].sourceIds, job)
     emit()
   }
   await Promise.all([
     run('pois', () => fetchPois(lat, lng, radius)),
     run('noise', () => fetchNoise(lat, lng)),
-    run('planning', () => fetchPlanning(lat, lng, place?.state ?? null)),
+    run('planning', () => fetchPlanning(lat, lng, place?.state ?? null, place?.country ?? null)),
     run('landValue', () => fetchLandValue(lat, lng, place?.country ?? null, place?.state ?? null)),
     run('council', () => fetchCouncil(place?.city ?? null, place?.street ?? null)),
+    run('flood', () => fetchFlood(lat, lng, place?.country ?? null)),
+    run('air', () => fetchAir(lat, lng, place?.country ?? null)),
+    run('transit', () => fetchTransit(lat, lng, place?.country ?? null)),
   ])
   return { ...report }
 }
@@ -136,16 +148,41 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
   const construction = near('baustelle')
   if (construction.count > 0) facts.push(`${construction.count} in OpenStreetMap eingetragene Baustellen im Umkreis, die nächste in ${fmtM(construction.nearest!.distanceM)}.`)
 
+  if (r.transit?.data?.covered) {
+    const t = r.transit?.data
+    if (t.ovClass) facts.push(`ÖV-Güteklasse: ${t.ovClass} (Bundesamt für Raumentwicklung).`)
+    if (t.departures500 !== null && !t.partial) facts.push(`${t.departures500.toLocaleString('de-DE')} Abfahrten pro Werktag an Haltestellen bis 500 m (Sollfahrplan, gtfs.de).`)
+    if (t.partial) hints.push('Fahrplandaten bisher nur für Fern- und Regionalverkehr; Bus, Tram und U-Bahn folgen.')
+    if (t.nearestLongDistance) facts.push(`Nächster Fernverkehrshalt: ${t.nearestLongDistance.name} in ${fmtM(t.nearestLongDistance.distanceM)}.`)
+  }
+
+  if (r.flood?.data?.covered) {
+    const hit = (['haeufig', 'hq100', 'extrem'] as FloodScenario[]).filter((s) => r.flood!.data!.inArea[s])
+    if (hit.length) facts.push(`Liegt in einer Hochwassergefahrenfläche, Szenario: ${FLOOD_LABEL[hit[0]]} (BfG).`)
+    else facts.push('Liegt in keiner kartierten Hochwassergefahrenfläche (Umkreis etwa 25 m), auch nicht bei extremem Hochwasser (BfG). Starkregen ist darin nicht enthalten.')
+  }
+
+  if (r.air?.data?.stations.length) {
+    const s0 = r.air?.data.stations[0]
+    const vals = [s0.no2 !== undefined && `NO₂ ${s0.no2} µg/m³`, s0.pm25 !== undefined && `PM2,5 ${s0.pm25} µg/m³`, s0.pm10 !== undefined && `PM10 ${s0.pm10} µg/m³`].filter(Boolean).join(', ')
+    facts.push(`Nächste Luftmessstation: ${s0.name} (${s0.type}) in ${fmtM(s0.distanceM)}, Jahresmittel ${r.air?.data.year}: ${vals} (Umweltbundesamt).`)
+  }
+
   if (r.planning.data?.covered) {
-    const inProc = r.planning.data.plans.filter((p) => p.status === 'im Verfahren').length
-    const valid = r.planning.data.plans.filter((p) => p.status === 'festgesetzt').length
-    facts.push(`Bebauungspläne am Punkt: ${valid} festgesetzt, ${inProc} im Verfahren (${r.planning.data.region}).`)
-    if (inProc) hints.push('Ein Plan im Verfahren ist noch keine genehmigte Baumaßnahme.')
+    const zoning = r.planning.data.plans.filter((p) => p.status === 'Flächenwidmung' || p.status === 'Bauzone')
+    if (zoning.length) facts.push(`${zoning[0].status} am Punkt: ${zoning[0].name} (${r.planning.data.region}).`)
+    else {
+      const inProc = r.planning.data.plans.filter((p) => p.status === 'im Verfahren').length
+      const valid = r.planning.data.plans.filter((p) => p.status === 'festgesetzt').length
+      facts.push(`Bebauungspläne am Punkt: ${valid} festgesetzt, ${inProc} im Verfahren (${r.planning.data.region}).`)
+      if (inProc) hints.push('Ein Plan im Verfahren ist noch keine genehmigte Baumaßnahme.')
+    }
   } else if (r.planning.data) gaps.push(`Bebauungspläne für ${r.planning.data.region ?? 'diese Region'} sind noch nicht angebunden; siehe ${r.planning.data.portal?.label}.`)
 
   if (r.landValue.data?.values.length) {
     const v = r.landValue.data.values[0]
-    facts.push(`Bodenrichtwert: ${v.valueEurPerSqm.toLocaleString('de-DE')} €/m² (${v.usage ?? 'Nutzung k. A.'}, Stichtag ${v.referenceDate ?? 'k. A.'}, BORIS.NRW).`)
+    const stichtag = v.referenceDate ? new Date(v.referenceDate).toLocaleDateString('de-DE') : 'k. A.'
+    facts.push(`Bodenrichtwert: ${v.valueEurPerSqm.toLocaleString('de-DE')} €/m² (${v.usage ?? 'Nutzung k. A.'}, Stichtag ${stichtag}, ${r.landValue.data.portal?.label ?? 'Gutachterausschuss'}).`)
     hints.push('Der Bodenrichtwert ist ein Zonen-Durchschnitt, kein Verkehrswert.')
   } else if (r.landValue.data) gaps.push(r.landValue.data.note)
 
@@ -154,8 +191,8 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
     if (hits.length) facts.push(`${hits.length} aktuelle Ratsvorlagen mit Bezug zu Straße oder Planung (${r.council.data.system}).`)
   } else if (r.council.data) gaps.push(r.council.data.note)
 
-  for (const s of [r.pois, r.noise, r.planning, r.landValue, r.council]) if (s.status === 'error') gaps.push(`Quelle nicht erreichbar: ${s.error}`)
-  if ([r.pois, r.noise, r.planning, r.landValue, r.council].some((s) => s.status === 'loading')) hints.push('Einige Quellen antworten noch …')
+  for (const s of [r.pois, r.noise, r.planning, r.landValue, r.council, r.flood, r.air, r.transit]) if (s && s.status === 'error') gaps.push(`Quelle nicht erreichbar: ${s.error}`)
+  if ([r.pois, r.noise, r.planning, r.landValue, r.council, r.flood, r.air, r.transit].some((s) => s?.status === 'loading')) hints.push('Einige Quellen antworten noch …')
   return { facts, hints, gaps }
 }
 

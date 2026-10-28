@@ -72,7 +72,11 @@ export function ringPoints(lat: number, lng: number, radiusM = RING_M): [number,
 async function identify(source: NoiseSource, period: NoisePeriod, lat: number, lng: number): Promise<NoiseValue> {
   const geometry = encodeURIComponent(JSON.stringify({ x: lng, y: lat, spatialReference: { wkid: 4326 } }))
   const url = `${serviceUrl(source, period)}/identify?geometry=${geometry}&geometryType=esriGeometryPoint&returnGeometry=false&returnCatalogItems=false&f=json`
-  const res = await fetchJson<{ value?: string }>('eea_noise', url)
+  // Ein zweiter Versuch, falls der EEA-Server kurz nicht antwortet
+  const res = await fetchJson<{ value?: string }>('eea_noise', url).catch(async () => {
+    await new Promise((r) => setTimeout(r, 1500))
+    return fetchJson<{ value?: string }>('eea_noise', url)
+  })
   const rawClass = res.value && res.value !== 'NoData' ? Number(res.value) : null
   return { source, period, rawClass, range: classToRange(period, rawClass) }
 }
@@ -82,8 +86,14 @@ export async function fetchNoise(lat: number, lng: number): Promise<NoiseResult>
   return cached(key, 30 * 24 * 3600 * 1000, async () => {
     const jobs: Promise<NoiseValue>[] = []
     for (const s of ['road', 'rail', 'air', 'ind'] as NoiseSource[]) for (const p of ['lden', 'lnight'] as NoisePeriod[]) jobs.push(identify(s, p, lat, lng))
+    // Den Ring in kleinen Gruppen abfragen, um den öffentlichen Server nicht zu überlasten
+    const inGroups = async (pts: [number, number][], src: NoiseSource) => {
+      const out: NoiseValue[] = []
+      for (let i = 0; i < pts.length; i += 4) out.push(...(await Promise.all(pts.slice(i, i + 4).map(([a, b]) => identify(src, 'lden', a, b)))))
+      return out
+    }
     const ringJobs = (['road', 'rail'] as NoiseSource[]).map(async (src) => {
-      const ring = await Promise.all(ringPoints(lat, lng).map(([a, b]) => identify(src, 'lden', a, b)))
+      const ring = await inGroups(ringPoints(lat, lng), src)
       const max = ring.reduce<NoiseValue | null>((m, v) => (v.rawClass !== null && (!m || v.rawClass > (m.rawClass ?? 0)) ? v : m), null)
       return { source: src, period: 'lden' as NoisePeriod, rawClass: max?.rawClass ?? null, range: max?.range ?? null, radiusM: RING_M }
     })

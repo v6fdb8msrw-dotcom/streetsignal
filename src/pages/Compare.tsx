@@ -8,7 +8,7 @@ import { completeness, mainPrice } from '../model/property.ts'
 import { FACTORS, score, type FactorId } from '../search/compare.ts'
 import { getSetting, setSetting } from '../store/db.ts'
 
-const DEFAULT_WEIGHTS: Record<FactorId, number> = { ruhe: 3, gruen: 2, oepnv: 2, versorgung: 1, baustellen: 1, preis_qm: 2 }
+const DEFAULT_WEIGHTS: Record<FactorId, number> = { ruhe: 3, gruen: 2, oepnv: 1, takt: 2, hochwasser: 2, versorgung: 1, baustellen: 1, preis_qm: 2 }
 
 export function Compare() {
   const props = useProperties()

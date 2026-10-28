@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { parseNrw } from './landvalue.ts'
+import { parseHessen, parseNrw } from './landvalue.ts'
 import { classToRange, formatRange } from './noise.ts'
 import { matchEndpoint } from './oparl.ts'
+import { tileKey } from './transit.ts'
 import { buildQuery, categorize } from './overpass.ts'
-import { parseBerlin, parseHamburg } from './planning.ts'
+import { parseBauzonen, parseBerlin, parseHamburg, parseWien } from './planning.ts'
 
 describe('Lärmklassen', () => {
   it('übersetzt die EEA-Klassen in dB-Spannen', () => {
@@ -80,5 +81,39 @@ describe('OParl', () => {
     expect(matchEndpoint(eps, 'Köln')?.url).toBe('https://k/system')
     expect(matchEndpoint(eps, 'München')?.url).toBe('https://m')
     expect(matchEndpoint(eps, 'Münster')).toBeNull()
+  })
+})
+
+describe('Neue Quellen', () => {
+  it('liest Bodenrichtwerte Hessen', () => {
+    const [v] = parseHessen(`GetFeatureInfo results:
+
+Layer 'hboris_feature'
+  Feature 19921: 
+    GENA = 'Frankfurt am Main'
+    BRW = '6800 EUR/m²'
+    STAG = '01.01.2026'
+    ENTW_KLART = 'Baureifes Land'
+    NUTA_KLART = 'Wohnbaufläche  Mehrfamilienhäuser (MFH)'
+    GABE = 'Gutachterausschuss Frankfurt'
+    URL = 'https://example.org/gaa.pdf'
+`)
+    expect(v.valueEurPerSqm).toBe(6800)
+    expect(v.referenceDate).toBe('2026-01-01')
+    expect(v.usage).toContain('Mehrfamilienhäuser')
+  })
+  it('liest Flächenwidmung Wien', () => {
+    const [p] = parseWien({ features: [{ properties: { WIDMUNG_TXT: 'Gemischtes Baugebiet Bauklasse 5', WIDMUNGSKLASSE_TXT: 'Gemischtes Baugebiet', BEZIRK: '1' } }] })
+    expect(p.status).toBe('Flächenwidmung')
+    expect(p.name).toBe('Gemischtes Baugebiet Bauklasse 5')
+  })
+  it('liest Bauzonen Schweiz', () => {
+    const [p] = parseBauzonen({ results: [{ layerBodId: 'ch.are.bauzonen', attributes: { ch_bez_d: 'Mischzonen', name: 'Zürich', kt_kz: 'ZH' } }, { layerBodId: 'ch.are.gueteklassen_oev', attributes: {} }] })
+    expect(p.name).toBe('Mischzonen')
+    expect(p.status).toBe('Bauzone')
+  })
+  it('bildet Kachelschlüssel für Fahrplandaten', () => {
+    expect(tileKey(50.11, 8.68)).toBe('50_8p5')
+    expect(tileKey(52.49, 13.43)).toBe('52p25_13p25')
   })
 })

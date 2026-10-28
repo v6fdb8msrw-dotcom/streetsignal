@@ -2,7 +2,7 @@
 
 **Discover what surrounds you. Understand what comes next.**
 
-StreetSignal zeigt, was eine Wohnung, ein Haus oder ein Grundstück umgibt: kartierter Lärm, Grün, Nahverkehr, Schulen, Ärzte, Bebauungspläne, Bodenrichtwerte, Baustellen und Vorlagen aus dem Stadtrat. Jede Angabe mit Quelle, Datenstand und Aussagekraft. Dazu eine persönliche Karte mit gespeicherten Immobilien und ein Vergleich nach eigenen Gewichtungen.
+StreetSignal zeigt, was eine Wohnung, ein Haus oder ein Grundstück umgibt: kartierter Lärm, Hochwasser, Luftqualität, Grün, Nahverkehr mit Fahrplantakt, Schulen, Ärzte, Bebauungspläne und Flächenwidmung, Bodenrichtwerte, Baustellen und Vorlagen aus dem Stadtrat. Jede Angabe mit Quelle, Datenstand und Aussagekraft. Dazu eine persönliche Karte mit gespeicherten Immobilien und ein Vergleich nach eigenen Gewichtungen.
 
 Webseite (ohne Linkabruf, alles andere funktioniert): https://v6fdb8msrw-dotcom.github.io/streetsignal/
 
@@ -65,8 +65,11 @@ public/images/  Fotos (Unsplash, siehe CREDITS.md)
 
 ## Bekannte Einschränkungen
 
-- **Bebauungspläne** sind nur für Hamburg und Berlin angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
-- **Bodenrichtwerte** sind nur für NRW angebunden (Hessens kostenfreier Dienst antwortet derzeit fehlerhaft); andernorts Link zu BORIS. Österreich und die Schweiz haben kein vergleichbares offenes System.
+- **Bebauungspläne/Widmung** sind für Hamburg, Berlin, Wien, Oberösterreich (Kartenebene) und die Schweiz (Bauzonen) angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
+- **Bodenrichtwerte** sind für NRW und Hessen angebunden; andernorts Link zu BORIS. Österreich und die Schweiz haben kein vergleichbares offenes System.
+- **Fahrpläne:** bisher Fern- und Regionalverkehr; der Nahverkehr wird nachgereicht. Aufbereitung: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
+- **Luftqualität:** Jahresmittel 2025 der UBA-Stationen, Aufbereitung `node tools/data/build-air.mjs 2025`.
+- **Hochwasser:** BfG-Gefahrenflächen nur für Deutschland, ohne Starkregen.
 - **Lärm:** EU-Kartierung 2022 deckt Ballungsräume und Hauptverkehrswege ab; „keine Klasse“ heißt nicht „ruhig“. Zusätzlich wird ein Ring von 75 m abgetastet.
 - **Baustellen** kommen aus OpenStreetMap und sind unvollständig; Autobahn-Baustellen nur als Link.
 - **Ratsvorlagen** gibt es nur für Kommunen mit OParl-Schnittstelle; Vorlagen sind nicht verortet.

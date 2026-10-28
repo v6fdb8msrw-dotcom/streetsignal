@@ -3,7 +3,7 @@
 import { pricePerSqm, type Property } from '../model/property.ts'
 import { nearestOf, summarizePois, type EnvReport } from '../services/environment.ts'
 
-export type FactorId = 'ruhe' | 'gruen' | 'oepnv' | 'versorgung' | 'baustellen' | 'preis_qm'
+export type FactorId = 'ruhe' | 'gruen' | 'oepnv' | 'takt' | 'hochwasser' | 'versorgung' | 'baustellen' | 'preis_qm'
 
 export interface Factor {
   id: FactorId
@@ -42,6 +42,26 @@ export const FACTORS: Factor[] = [
       return d.length ? Math.min(...d) : null
     },
     format: (v) => `${Math.round(v)} m`,
+  },
+  {
+    id: 'takt',
+    label: 'Nahverkehrstakt',
+    better: 'higher',
+    describe: 'Abfahrten pro Werktag an Haltestellen bis 500 m (Sollfahrplan, nur Deutschland)',
+    value: (_p, r) => (r?.transit?.data?.partial ? null : (r?.transit?.data?.departures500 ?? null)),
+    format: (v) => `${v.toLocaleString('de-DE')} Abfahrten`,
+  },
+  {
+    id: 'hochwasser',
+    label: 'Hochwassersicherheit',
+    better: 'lower',
+    describe: 'BfG-Hochwasserflächen: 0 = nie betroffen, 1 = nur extrem, 2 = HQ100, 3 = häufig (nur Deutschland)',
+    value: (_p, r) => {
+      const f = r?.flood?.data
+      if (!f?.covered) return null
+      return f.inArea.haeufig ? 3 : f.inArea.hq100 ? 2 : f.inArea.extrem ? 1 : 0
+    },
+    format: (v) => ['nicht betroffen', 'nur bei Extremhochwasser', 'bei HQ100', 'schon bei häufigem Hochwasser'][v],
   },
   {
     id: 'versorgung',

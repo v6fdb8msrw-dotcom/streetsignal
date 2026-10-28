@@ -21,7 +21,7 @@ export function LayerPanel() {
   const layers = useUi((s) => s.layers)
   const toggle = useUi((s) => s.toggleLayer)
   const [open, setOpen] = useState(false)
-  const ids: LayerId[] = ['pois', 'properties', 'radius', 'noise_road', 'noise_rail', 'noise_air', 'noise_regional', 'bplan', 'landvalue']
+  const ids: LayerId[] = ['pois', 'properties', 'radius', 'noise_road', 'noise_rail', 'noise_air', 'noise_regional', 'flood', 'bplan', 'zoning', 'landvalue', 'transit_quality']
   const noiseOn = layers.noise_road || layers.noise_rail || layers.noise_air
   return (
     <>
@@ -42,7 +42,10 @@ export function LayerPanel() {
                       {LAYER_LABEL[id]}
                       {id === 'noise_regional' && <small>NRW, Berlin, Schweiz · ab Stadtteil-Zoom</small>}
                       {id === 'bplan' && <small>Hamburg, Berlin · ab Stadtteil-Zoom</small>}
-                      {id === 'landvalue' && <small>NRW · ab Straßen-Zoom</small>}
+                      {id === 'landvalue' && <small>NRW, Hessen · ab Straßen-Zoom</small>}
+                      {id === 'flood' && <small>Deutschland · HQ100 und extrem, Fluss und Küste</small>}
+                      {id === 'zoning' && <small>Wien, Oberösterreich, Schweiz</small>}
+                      {id === 'transit_quality' && <small>Schweiz</small>}
                       {id.startsWith('noise_') && id !== 'noise_regional' && <small>EU-Lärmkartierung 2022 · {hint.length ? 'ganz DACH' : ''}</small>}
                     </span>
                   </label>

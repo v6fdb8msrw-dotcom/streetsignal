@@ -10,6 +10,10 @@ export function arcgisImageTileUrl(base: string): string {
   return `${base}/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image`
 }
 
+export function arcgisMapTileUrl(base: string): string {
+  return `${base}/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image`
+}
+
 /** GetFeatureInfo um einen Punkt (kleines Fenster von etwa 20 m) */
 export async function featureInfo(sourceId: string, base: string, layers: string, lat: number, lng: number, infoFormat: string, version: '1.1.1' | '1.3.0' = '1.1.1'): Promise<string> {
   const d = 0.00015

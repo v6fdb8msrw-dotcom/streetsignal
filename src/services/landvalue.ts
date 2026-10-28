@@ -71,8 +71,30 @@ export function parseNrw(text: string): LandValue[] {
   return out
 }
 
+const HESSEN = 'https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-maps.ows'
+
+/** Hessen liefert „KEY = 'Wert'“ je Zeile (MapServer text/plain) */
+export function parseHessen(text: string): LandValue[] {
+  const out: LandValue[] = []
+  for (const block of text.split(/\n\s*Feature \d+:/).slice(1)) {
+    const f = (k: string) => block.match(new RegExp(`\\n\\s*${k} = '([^']*)'`))?.[1]?.replace(/\s+/g, ' ').trim() || null
+    const brw = Number((f('BRW') ?? '').replace(/[^\d,]/g, '').replace(',', '.'))
+    if (!Number.isFinite(brw) || brw <= 0) continue
+    const [d, m, y] = (f('STAG') ?? '').split('.')
+    out.push({
+      valueEurPerSqm: brw,
+      referenceDate: y ? `${y}-${m}-${d}` : null,
+      usage: f('NUTA_KLART') ?? f('ERGN_KLART'),
+      district: f('ENTW_KLART'),
+      municipality: f('GENA'),
+      committee: f('GABE'),
+      documentUrl: f('URL'),
+    })
+  }
+  return out
+}
+
 const PORTALS: Record<string, { label: string; url: string }> = {
-  Hessen: { label: 'Geoportal Hessen (BORIS Hessen)', url: 'https://www.geoportal.hessen.de' },
   Niedersachsen: { label: 'BORIS Niedersachsen', url: 'https://immobilienmarkt.niedersachsen.de/bodenrichtwerte' },
   Bayern: { label: 'BORIS Bayern', url: 'https://www.boris-bayern.de' },
   'Baden-Württemberg': { label: 'BORIS-BW', url: 'https://www.gutachterausschuesse-bw.de/borisbw/' },
@@ -84,6 +106,18 @@ export async function fetchLandValue(lat: number, lng: number, country: string |
   const now = new Date().toISOString()
   if (country === 'AT' || country === 'CH')
     return { covered: false, values: [], portal: null, note: country === 'CH' ? 'Die Schweiz hat kein öffentliches Bodenrichtwertsystem wie Deutschland.' : 'Für Österreich gibt es keine vergleichbaren amtlichen Bodenrichtwerte als offenen Dienst.', fetchedAt: now }
+  if (state === 'Hessen') {
+    return cached(`brw:${lat.toFixed(5)},${lng.toFixed(5)}`, 30 * 24 * 3600 * 1000, async () => {
+      const text = await featureInfo('he_boris', HESSEN, 'hboris_feature', lat, lng, 'text/plain')
+      return {
+        covered: true,
+        values: parseHessen(text),
+        portal: { label: 'BORIS Hessen', url: 'https://www.geoportal.hessen.de' },
+        note: 'Bodenrichtwerte sind Durchschnittswerte einer Zone, kein Verkehrswert eines bestimmten Grundstücks.',
+        fetchedAt: now,
+      }
+    })
+  }
   if (state === 'Nordrhein-Westfalen') {
     return cached(`brw:${lat.toFixed(5)},${lng.toFixed(5)}`, 30 * 24 * 3600 * 1000, async () => {
       const text = await featureInfo('nrw_boris', NRW, NRW_LAYERS, lat, lng, 'text/plain')

@@ -1,6 +1,7 @@
 // Zuschaltbare Kartenebenen aus öffentlichen Diensten (alle geprüft: CORS, EPSG:3857, kostenlos).
 import type { LayerId } from '../store/ui.ts'
-import { arcgisImageTileUrl, wmsTileUrl } from '../services/wms.ts'
+import { arcgisImageTileUrl, arcgisMapTileUrl, wmsTileUrl } from '../services/wms.ts'
+import { BFG } from '../services/hazards.ts'
 import { serviceUrl } from '../services/noise.ts'
 
 export interface RasterOverlay {
@@ -22,6 +23,14 @@ export const OVERLAYS: RasterOverlay[] = [
   { id: 'ch-noise', layer: 'noise_regional', label: 'Strassenlärm Schweiz', tiles: wmsTileUrl('https://wms.geo.admin.ch/', 'ch.bafu.laerm-strassenlaerm_tag'), minzoom: 11, opacity: 0.6, attribution: 'Lärmkarte: BAFU, geo.admin.ch' },
   { id: 'hh-bplan', layer: 'bplan', label: 'Bebauungspläne Hamburg', tiles: wmsTileUrl('https://geodienste.hamburg.de/HH_WMS_Bebauungsplaene', 'hh_hh_festgestellt,hh_lgv_imverfahren'), minzoom: 12, opacity: 0.55, attribution: 'Bebauungspläne: Freie und Hansestadt Hamburg, Behörde für Stadtentwicklung und Wohnen (dl-de/by-2-0)' },
   { id: 'be-bplan', layer: 'bplan', label: 'Bebauungspläne Berlin', tiles: wmsTileUrl('https://gdi.berlin.de/services/wms/bplan', 'a_bp_iv,b_bp_fs'), minzoom: 12, opacity: 0.55, attribution: 'Bebauungspläne: Geoportal Berlin (dl-de/zero-2-0)' },
+  { id: 'bfg-extrem', layer: 'flood', label: 'Hochwasser extrem (BfG)', tiles: arcgisMapTileUrl(`${BFG}/HWRMRL_DE_LL`), opacity: 0.35, attribution: 'Hochwasser: Bundesanstalt für Gewässerkunde (BfG), Daten der Länder' },
+  { id: 'bfg-hq100', layer: 'flood', label: 'Hochwasser HQ100 (BfG)', tiles: arcgisMapTileUrl(`${BFG}/HWRMRL_DE_LM`), opacity: 0.5, attribution: 'Hochwasser: Bundesanstalt für Gewässerkunde (BfG), Daten der Länder' },
+  { id: 'bfg-kueste', layer: 'flood', label: 'Küstenhochwasser HQ100 (BfG)', tiles: arcgisMapTileUrl(`${BFG}/HWRMRL_DE_SM`), opacity: 0.5, attribution: 'Hochwasser: Bundesanstalt für Gewässerkunde (BfG), Daten der Länder' },
+  { id: 'wien-fwp', layer: 'zoning', label: 'Flächenwidmung Wien', tiles: wmsTileUrl('https://data.wien.gv.at/daten/geo', 'ogdwien:GENFLWIDMUNGOGD'), minzoom: 11, opacity: 0.55, attribution: 'Flächenwidmung: Stadt Wien – data.wien.gv.at' },
+  { id: 'ooe-fwp', layer: 'zoning', label: 'Flächenwidmung Oberösterreich', tiles: wmsTileUrl('https://ags.doris.at/arcgis/services/INSPIRE/MapServer/WMSServer', '8'), minzoom: 12, opacity: 0.55, attribution: 'Flächenwidmung: Land Oberösterreich, DORIS' },
+  { id: 'ch-bauzonen', layer: 'zoning', label: 'Bauzonen Schweiz', tiles: wmsTileUrl('https://wms.geo.admin.ch/', 'ch.are.bauzonen'), minzoom: 10, opacity: 0.55, attribution: 'Bauzonen: Bundesamt für Raumentwicklung ARE, geo.admin.ch' },
+  { id: 'ch-oev', layer: 'transit_quality', label: 'ÖV-Güteklassen Schweiz', tiles: wmsTileUrl('https://wms.geo.admin.ch/', 'ch.are.gueteklassen_oev'), minzoom: 9, opacity: 0.5, attribution: 'ÖV-Güteklassen: Bundesamt für Raumentwicklung ARE, geo.admin.ch' },
+  { id: 'he-brw', layer: 'landvalue', label: 'Bodenrichtwerte Hessen', tiles: wmsTileUrl('https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-maps.ows', 'hboris_zonen_t'), minzoom: 13, opacity: 0.7, attribution: 'Bodenrichtwerte: BORIS Hessen, Gutachterausschüsse' },
   { id: 'nrw-brw', layer: 'landvalue', label: 'Bodenrichtwerte NRW', tiles: wmsTileUrl('https://www.wms.nrw.de/boris/wms_nw_brw', '17,18'), minzoom: 13, opacity: 0.7, attribution: 'Bodenrichtwerte: BORIS.NRW, Gutachterausschüsse NRW' },
 ]
 
@@ -31,6 +40,9 @@ export const LAYER_LABEL: Record<LayerId, string> = {
   noise_air: 'Fluglärm',
   noise_regional: 'Lärm (Länderdaten, genauer)',
   bplan: 'Bebauungspläne',
+  zoning: 'Flächenwidmung und Bauzonen',
+  flood: 'Hochwassergefahren',
+  transit_quality: 'ÖV-Güteklassen',
   landvalue: 'Bodenrichtwerte',
   pois: 'Umgebung',
   properties: 'Meine Immobilien',

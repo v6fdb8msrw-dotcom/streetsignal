@@ -1,6 +1,6 @@
 # Datenquellen
 
-Stand der Prüfung: 26.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schlüssel, Abruf direkt aus dem Browser (CORS) und die Lizenzangabe des Dienstes selbst (WMS-Capabilities bzw. Dienstbeschreibung). Die Liste in der App (`src/sources/registry.ts`) ist dieselbe.
+Stand der Prüfung: 26.10.2026, Erweiterung 27.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schlüssel, Abruf direkt aus dem Browser (CORS) und die Lizenzangabe des Dienstes selbst (WMS-Capabilities bzw. Dienstbeschreibung). Die Liste in der App (`src/sources/registry.ts`) ist dieselbe.
 
 ## Umgebung und Planung
 
@@ -16,11 +16,27 @@ Stand der Prüfung: 26.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schl�
 | Bebauungspläne Hamburg | Planung | ja | nein | – | WMS + GetFeatureInfo | Planname, Status, Feststellungsdatum, PDF, Begründung | dl-de/by-2-0, „Freie und Hansestadt Hamburg, Behörde für Stadtentwicklung und Wohnen“ | nur Hamburg; rechtsverbindlich nur das Original |
 | Bebauungspläne Berlin | Planung | ja | nein | – | WMS 1.3.0 + GetFeatureInfo | Planname, Geltungsbereich, Rechtsstand, Inhalte, Daten, PDF | dl-de/zero-2-0 | nur Berlin |
 | BORIS.NRW | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo | Wert €/m², Stichtag, Nutzung, Ortsteil, Gutachterausschuss, Dokument | dl-de/zero-2-0 (laut Open.NRW) | Zonenwert, kein Verkehrswert |
-| BORIS-D / Landesportale | Bodenrichtwerte | ja | nein | – | nur Link | – | je Land | Hessen-Dienst antwortet fehlerhaft |
+| BORIS Hessen | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (gds-srv.hessen.de) | Wert €/m², Stichtag, Nutzung, Entwicklungszustand, Gutachterausschuss | dl-de/zero-2-0; laut Dienst „jede Nutzung ohne Einschränkung“, kostenfrei nach § 24 HVGG | Zonenwert, kein Verkehrswert |
+| BORIS-D / übrige Landesportale | Bodenrichtwerte | ja | nein | – | nur Link | – | je Land | keine belastbare offene Lizenz für automatischen Abruf gefunden |
+| Hochwassergefahrenflächen (BfG) | Naturgefahren | ja | nein | – | ArcGIS MapServer (Bild, Abfrage am Punkt) | Betroffenheit häufig/HQ100/extrem, Berichtsjahr | GeoNutzV des Bundes: kostenlos, auch kommerziell, Quellenvermerk | Deutschland; keine kleinen Bäche, kein Starkregen |
+| Luftqualität Umweltbundesamt | Umwelt | ja | nein | – | einmalig aufbereitet (keine Browser-Freigabe der API) | Jahresmittel NO₂, PM10, PM2,5 je Station | § 12a EGovG laut UBA-Nutzungsbedingungen: kommerziell und nicht kommerziell, Vermerk „Umweltbundesamt“, Änderungen kennzeichnen | Wert gilt an der Station |
+| Fahrpläne gtfs.de (DELFI) | Verkehr | ja | nein | – | GTFS, einmalig zu Abfahrten je Haltestelle aufbereitet | Haltestelle, Lage, Abfahrten am Stichtag, Verkehrsmittel | CC BY 4.0; Feeds enthalten teils OpenStreetMap-Daten (ODbL) | Sollfahrplan, ohne Gewähr; Nahverkehr wird nachgereicht |
+| ÖV-Güteklassen (ARE) | Verkehr | ja | nein | Fair Use | geo.admin.ch Abfrage + WMS | Güteklasse A–D | BGDI-Nutzungsbedingungen, Quellenangabe | Schweiz |
+| Bauzonen Schweiz harmonisiert (ARE) | Planung | ja | nein | Fair Use | geo.admin.ch Abfrage + WMS | Hauptnutzung, Gemeinde | opendata.swiss: kommerziell erlaubt, Quellenangabe | Schweiz; kommunale Zone maßgeblich |
+| Flächenwidmung Wien (generalisiert) | Planung | ja | nein | – | WMS + GetFeatureInfo | Widmung, Bauklasse, Bezirk | CC BY 4.0, „Stadt Wien – data.wien.gv.at“ | generalisiert |
+| Flächenwidmung Oberösterreich (DORIS) | Planung | ja | nein | – | WMS (Kartenebene) | Kartenbild | CC BY 4.0 (Katalog), Dienst „kostenfrei“ | Abfrage liefert nur Codes |
 | OParl-Verzeichnis + Ratsinformationssysteme | Kommunales | ja | nein | – | OParl JSON | Titel, Datum, Art, Aktenzeichen, Link | je Kommune; nur Metadaten und Link | 127 Systeme, nicht alle erreichbar, nicht verortet |
-| Autobahn GmbH (verkehr.autobahn.de) | Baustellen | technisch ja | nein | **keine Lizenz veröffentlicht** | nur Link zur Baustellenkarte | – | – | wird nicht automatisch abgerufen |
+| Autobahn GmbH (verkehr.autobahn.de) | Baustellen | technisch ja | nein | **keine Lizenz veröffentlicht** (erneut geprüft 27.10.: weder API-Spezifikation noch Mobilithek) | nur Link zur Baustellenkarte | – | – | wird nicht automatisch abgerufen |
 | Unsplash | Fotos | ja | nein | – | im Projekt gespeichert | 4 Fotos | Unsplash-Lizenz | siehe public/images/CREDITS.md |
 | Ollama (optional) | lokale KI | ja | nein | – | localhost:11434 | Zusammenfassung belegter Fakten | je Modell | muss selbst installiert werden |
+
+## Geprüft, aber noch nicht eingebunden
+
+| Quelle | Grund |
+|---|---|
+| Flächenwidmung Steiermark | Lizenz CC BY 4.0 AT, aber keine bestätigte Dienst-Adresse gefunden; nur verlinkt |
+| Lärmkarten Österreich (laerminfo.at) | CC BY 4.0, aber nur als Download; die EU-Lärmdaten decken dieselbe Kartierung bereits ab |
+| Bebauungspläne einzelner Gemeinden (z. B. Hessen) | Lizenz je Gemeinde verschieden, teils nur nicht kommerziell; nur verlinkt |
 
 ## Immobilienportale
 

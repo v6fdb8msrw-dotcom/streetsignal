@@ -22,8 +22,13 @@ export interface Section<T> {
   sourceIds: string[]
 }
 
+/** Bei jeder neuen Quelle erhöhen: ältere gespeicherte Berichte werden dann automatisch neu abgefragt */
+export const REPORT_VERSION = 3
+
 export interface EnvReport {
   id: string
+  /** Version der Analyse; fehlt bei Berichten vor Version 2 */
+  version?: number
   /** Immobilie oder gespeicherter Ort, zu dem der Bericht gehört (für die Änderungshistorie) */
   targetId: string
   createdAt: string
@@ -59,6 +64,7 @@ const pending = <T,>(sourceIds: string[]): Section<T> => ({ status: 'loading', d
 export async function analyze(targetId: string, lat: number, lng: number, radius: Radius, onPartial?: (r: EnvReport) => void): Promise<EnvReport> {
   const report: EnvReport = {
     id: crypto.randomUUID(),
+    version: REPORT_VERSION,
     targetId,
     createdAt: new Date().toISOString(),
     lat,

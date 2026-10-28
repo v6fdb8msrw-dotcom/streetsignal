@@ -8,7 +8,7 @@ import { useProperties } from '../lib/data.ts'
 import { navigate, type Route } from '../lib/router.ts'
 import { MapView } from '../map/MapView.tsx'
 import { LAYER_LABEL, NOISE_LEGEND, OVERLAYS } from '../map/overlays.ts'
-import { analyze, RADII, type EnvReport, type Radius } from '../services/environment.ts'
+import { analyze, RADII, REPORT_VERSION, type EnvReport, type Radius } from '../services/environment.ts'
 import { POI_CATEGORIES } from '../services/overpass.ts'
 import { reportsFor, savePlace, saveReport, uid } from '../store/db.ts'
 import { useUi, type LayerId } from '../store/ui.ts'
@@ -110,7 +110,8 @@ export function Explore({ route }: { route: Extract<Route, { page: 'umgebung' }>
     setBusy(true)
     const history = await reportsFor(targetId)
     const sameRadius = history.find((h) => h.radius === radius)
-    if (sameRadius && !force) {
+    // Gespeicherte Berichte nur wiederverwenden, wenn sie alle aktuellen Quellen enthalten
+    if (sameRadius && !force && (sameRadius.version ?? 1) >= REPORT_VERSION) {
       setReport(sameRadius)
       setPrevious(history.filter((h) => h.radius === radius)[1] ?? null)
       setBusy(false)

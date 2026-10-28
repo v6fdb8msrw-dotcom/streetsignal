@@ -265,7 +265,7 @@ export const DATA_SOURCES: DataSource[] = [
     coverage: 'Deutschland',
     license: 'Creative Commons Namensnennung 4.0 (CC BY 4.0)',
     licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
-    dataDate: 'Sollfahrplan am Stichtag der Aufbereitung',
+    dataDate: 'Sollfahrplan Mittwoch, 04.11.2026',
     limits: 'Ohne Gewähr laut Anbieter; keine Echtzeit, keine Ausfälle.',
     url: 'https://gtfs.de',
     attribution: 'Fahrpläne: gtfs.de / DELFI e.V., CC BY 4.0 (aufbereitet)',

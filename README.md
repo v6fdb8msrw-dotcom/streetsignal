@@ -67,7 +67,7 @@ public/images/  Fotos (Unsplash, siehe CREDITS.md)
 
 - **Bebauungspläne/Widmung** sind für Hamburg, Berlin, Wien, Oberösterreich (Kartenebene) und die Schweiz (Bauzonen) angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
 - **Bodenrichtwerte** sind für NRW und Hessen angebunden; andernorts Link zu BORIS. Österreich und die Schweiz haben kein vergleichbares offenes System.
-- **Fahrpläne:** bisher Fern- und Regionalverkehr; der Nahverkehr wird nachgereicht. Aufbereitung: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
+- **Fahrpläne:** Fern-, Regional- und Nahverkehr in ganz Deutschland (Stichtag Mittwoch 04.11.2026, Sollfahrplan). Neu aufbereiten: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
 - **Luftqualität:** Jahresmittel 2025 der UBA-Stationen, Aufbereitung `node tools/data/build-air.mjs 2025`.
 - **Hochwasser:** BfG-Gefahrenflächen nur für Deutschland, ohne Starkregen.
 - **Lärm:** EU-Kartierung 2022 deckt Ballungsräume und Hauptverkehrswege ab; „keine Klasse“ heißt nicht „ruhig“. Zusätzlich wird ein Ring von 75 m abgetastet.

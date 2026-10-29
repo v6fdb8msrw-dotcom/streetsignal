@@ -1,6 +1,6 @@
 import { Loader2, MapPin, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { searchAddress, type GeoResult } from '../services/geocode.ts'
+import { searchAddress, searchAddressFallback, type GeoResult } from '../services/geocode.ts'
 
 interface Props {
   onPick: (r: GeoResult) => void
@@ -36,13 +36,31 @@ export function AddressSearch({ onPick, placeholder = 'Adresse, Ort oder PLZ in 
           setOpen(true)
         }
       } catch {
-        if (my === seq.current) setError('Adresssuche gerade nicht erreichbar.')
+        if (my === seq.current) setError('Die schnelle Adresssuche ist gerade überlastet. Enter startet die Ausweichsuche.')
       } finally {
         if (my === seq.current) setBusy(false)
       }
     }, 450)
     return () => clearTimeout(t)
   }, [q])
+
+  /** Ausweichsuche über Nominatim: nur auf ausdrücklichen Wunsch (Enter/Knopf), nicht beim Tippen */
+  const fallback = async () => {
+    if (q.trim().length < 3) return
+    setBusy(true)
+    setError(null)
+    try {
+      const r = await searchAddressFallback(q)
+      setResults(r)
+      setActive(0)
+      setOpen(true)
+      if (!r.length) setError('Keine Adresse gefunden. Bitte Schreibweise prüfen.')
+    } catch {
+      setError('Beide Adressdienste sind gerade nicht erreichbar. Du kannst stattdessen auf der Karte einen Punkt wählen.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const pick = (r: GeoResult) => {
     setOpen(false)
@@ -62,7 +80,7 @@ export function AddressSearch({ onPick, placeholder = 'Adresse, Ort oder PLZ in 
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') setActive((a) => Math.min(a + 1, results.length - 1))
             else if (e.key === 'ArrowUp') setActive((a) => Math.max(a - 1, 0))
-            else if (e.key === 'Enter' && results[active]) pick(results[active])
+            else if (e.key === 'Enter') results[active] ? pick(results[active]) : fallback()
           }}
           placeholder={placeholder}
           aria-label="Adresse suchen"
@@ -70,7 +88,7 @@ export function AddressSearch({ onPick, placeholder = 'Adresse, Ort oder PLZ in 
           aria-expanded={open}
         />
         {size === 'hero' && (
-          <button className="btn primary" onClick={() => results[active] && pick(results[active])} disabled={!results.length}>
+          <button className="btn primary" onClick={() => (results[active] ? pick(results[active]) : fallback())} disabled={q.trim().length < 3}>
             Umgebung entdecken
           </button>
         )}

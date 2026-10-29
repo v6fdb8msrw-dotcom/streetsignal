@@ -107,12 +107,12 @@ export function parseListingText(input: string): Extracted {
   if (nk) out.serviceCharges = nk
 
   const living = find(flat, [
-    new RegExp(String.raw`(?:Wohnfläche|Wohnfl\.|Nutzfläche|Fläche)\s*(?:ca\.\s*)?[:\-–]?\s*(?:ca\.\s*)?${NUM}\s*(?:m²|m2|qm)`, 'i'),
-    new RegExp(String.raw`${NUM}\s*(?:m²|m2|qm)\s*Wohnfläche`, 'i'),
+    new RegExp(String.raw`(?:Wohnfl(?:ä|ae)che|Wohnfl\.|Nutzfl(?:ä|ae)che|Fl(?:ä|ae)che)\s*(?:ca\.\s*)?[:\-–]?\s*(?:ca\.\s*)?${NUM}\s*(?:m²|m2|qm)`, 'i'),
+    new RegExp(String.raw`${NUM}\s*(?:m²|m2|qm)\s*Wohnfl(?:ä|ae)che`, 'i'),
   ])
   const plot = find(flat, [
-    new RegExp(String.raw`(?:Grundstücksfläche|Grundstück|Grundfläche)\s*(?:ca\.\s*)?[:\-–]?\s*(?:ca\.\s*)?${NUM}\s*(?:m²|m2|qm)`, 'i'),
-    new RegExp(String.raw`${NUM}\s*(?:m²|m2|qm)\s*Grundstück`, 'i'),
+    new RegExp(String.raw`(?:Grundst(?:ü|ue)cksfl(?:ä|ae)che|Grundst(?:ü|ue)ck|Grundfl(?:ä|ae)che)\s*(?:ca\.\s*)?[:\-–]?\s*(?:ca\.\s*)?${NUM}\s*(?:m²|m2|qm)`, 'i'),
+    new RegExp(String.raw`${NUM}\s*(?:m²|m2|qm)\s*Grundst(?:ü|ue)ck`, 'i'),
   ])
   if (living) out.livingArea = living
   if (plot) out.plotArea = plot
@@ -125,7 +125,11 @@ export function parseListingText(input: string): Extracted {
     }
   }
 
-  const rooms = find(flat, [new RegExp(String.raw`${NUM}\s*(?:Zimmer|Zi\.|-Zimmer)`, 'i'), new RegExp(String.raw`(?:Zimmeranzahl|Zimmer|Zi\.)\s*[:\-–]\s*${NUM}`, 'i')])
+  // Beschriftete Angabe zuerst; bei „520 m2 Zimmer“ darf die 2 aus „m2“ nicht als Zimmerzahl gelten
+  const rooms = find(flat, [
+    new RegExp(String.raw`(?:Zimmeranzahl|Zimmer|Zi\.)\s*[:\-–]\s*${NUM}`, 'i'),
+    new RegExp(String.raw`(?<![A-Za-zÄÖÜäöüß²\d.,])${NUM}\s*(?:Zimmer|Zi\.|-Zimmer)`, 'i'),
+  ])
   if (rooms && rooms.value > 0 && rooms.value < 60) out.rooms = rooms
   const beds = find(flat, [new RegExp(String.raw`Schlafzimmer\s*[:\-–]?\s*${NUM}`, 'i'), new RegExp(String.raw`${NUM}\s*Schlafzimmer`, 'i')])
   if (beds) out.bedrooms = beds

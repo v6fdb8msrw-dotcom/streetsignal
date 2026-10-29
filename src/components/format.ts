@@ -1,3 +1,4 @@
+import { parseNumber } from '../import/parseText.ts'
 export function money(v: number | null, currency: string, digits = 0): string {
   if (v === null) return 'unbekannt'
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency, maximumFractionDigits: digits }).format(v)
@@ -27,9 +28,7 @@ export function dateTime(iso: string): string {
 }
 
 /** Eingabefeld → Zahl oder null (deutsche Schreibweise) */
+/** Zahl aus einem Eingabefeld: 78,5 · 78.5 · 1.150 · 1'250'000 (gleiche Regeln wie die Texterkennung) */
 export function parseInput(s: string): number | null {
-  const t = s.replace(/[.\s']/g, '').replace(',', '.').trim()
-  if (!t) return null
-  const n = Number(t)
-  return Number.isFinite(n) ? n : null
+  return parseNumber(s)
 }

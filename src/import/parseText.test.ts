@@ -82,3 +82,26 @@ Wohnfläche: 115 m2
     expect(e.plotArea?.value).toBe(720)
   })
 })
+
+describe('Zahlen aus Formularfeldern', () => {
+  it('liest Dezimalpunkt, Dezimalkomma und Tausenderpunkte richtig', async () => {
+    const { parseInput } = await import('../components/format.ts')
+    expect(parseInput('78.5')).toBe(78.5)
+    expect(parseInput('78,5')).toBe(78.5)
+    expect(parseInput('1.150')).toBe(1150)
+    expect(parseInput('1150')).toBe(1150)
+    expect(parseInput('450.000')).toBe(450000)
+    expect(parseInput("1'250'000")).toBe(1250000)
+    expect(parseInput('')).toBeNull()
+  })
+})
+
+describe('Exposé in Umschrift', () => {
+  it('liest ae/ue und m2 und verwechselt m2 nicht mit Zimmern', async () => {
+    const { parseListingText } = await import('./parseText.ts')
+    const e = parseListingText('Einfamilienhaus zum Kauf Kaufpreis: 685.000 EUR Wohnflaeche: 142 m2 Grundstuecksflaeche: 520 m2 Zimmer: 5 Hauptstrasse 10, 37154 Northeim')
+    expect(e.livingArea?.value).toBe(142)
+    expect(e.plotArea?.value).toBe(520)
+    expect(e.rooms?.value).toBe(5)
+  })
+})

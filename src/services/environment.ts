@@ -2,6 +2,7 @@
 // fällt eine aus, bleibt ihr Abschnitt sichtbar leer mit Grund, statt still zu verschwinden.
 import { dist as fmtM } from '../components/format.ts'
 import { fetchAir, type AirResult } from './air.ts'
+import { germanStateAt } from './region.ts'
 import { reverseGeocode, type GeoResult } from './geocode.ts'
 import { fetchFlood, FLOOD_LABEL, type FloodResult, type FloodScenario } from './hazards.ts'
 import { fetchTransit, type TransitResult } from './transit.ts'
@@ -61,7 +62,7 @@ const pending = <T,>(sourceIds: string[]): Section<T> => ({ status: 'loading', d
  * Fragt alle Quellen parallel ab. onPartial meldet jeden fertigen Abschnitt sofort,
  * damit die Oberfläche nicht auf die langsamste Quelle warten muss.
  */
-export async function analyze(targetId: string, lat: number, lng: number, radius: Radius, onPartial?: (r: EnvReport) => void): Promise<EnvReport> {
+export async function analyze(targetId: string, lat: number, lng: number, radius: Radius, onPartial?: (r: EnvReport) => void, hint?: GeoResult | null): Promise<EnvReport> {
   const report: EnvReport = {
     id: crypto.randomUUID(),
     version: REPORT_VERSION,
@@ -82,9 +83,16 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
   }
   const emit = () => onPartial?.({ ...report })
   emit()
-  const geo = await reverseGeocode(lat, lng).catch(() => null)
-  // Stadtstaaten: Photon liefert dort oft kein Bundesland
-  const place = geo && !geo.state && geo.city && ['Berlin', 'Hamburg', 'Bremen'].includes(geo.city) ? { ...geo, state: geo.city } : geo
+  const geo = hint ?? (await reverseGeocode(lat, lng).catch(() => null))
+  // Bundesland notfalls aus den amtlichen Ländergrenzen (funktioniert auch, wenn alle Adressdienste ausfallen)
+  let place = geo
+  if (!place?.state && (!place || place.country === 'DE')) {
+    const state = await germanStateAt(lat, lng)
+    if (state)
+      place = place
+        ? { ...place, state }
+        : { label: 'Gewählter Punkt', detail: state, lat, lng, country: 'DE', city: null, street: null, postcode: null, state, precision: 'exact' }
+  }
   report.place = place
   emit()
   const run = async <K extends 'pois' | 'noise' | 'planning' | 'landValue' | 'council' | 'flood' | 'air' | 'transit'>(key: K, job: () => Promise<NonNullable<EnvReport[K]['data']>>) => {

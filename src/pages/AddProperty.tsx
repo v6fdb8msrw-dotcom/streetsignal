@@ -12,7 +12,7 @@ import { PRECISION_LABEL } from '../model/listing.ts'
 import { IMPORT_METHOD_LABEL, type ImportMethod, type Offer, type Property } from '../model/property.ts'
 import type { Fact, Provenance } from '../model/provenance.ts'
 import { CATEGORIES, CATEGORY_GROUPS, type Country, type Currency, type Transaction } from '../model/taxonomy.ts'
-import { searchAddress, type GeoResult } from '../services/geocode.ts'
+import { searchAddress, searchAddressFallback, type GeoResult } from '../services/geocode.ts'
 import { hostOf, portalForUrl } from '../sources/registry.ts'
 import { getSetting, listProperties, saveProperty, setSetting, uid } from '../store/db.ts'
 import { useUi } from '../store/ui.ts'
@@ -133,9 +133,11 @@ export function AddProperty() {
     if (!q) return
     setBusy('Suche die Lage …')
     try {
-      setGeo(await searchAddress(q))
+      // Ausdrücklicher Klick: fällt Photon aus oder findet nichts, darf Nominatim einmal suchen
+      const r = await searchAddress(q).catch(() => [] as GeoResult[])
+      setGeo(r.length ? r : await searchAddressFallback(q))
     } catch {
-      setError('Adresssuche nicht erreichbar.')
+      setError('Beide Adressdienste sind gerade nicht erreichbar. Bitte später erneut „Lage bestimmen“.')
     } finally {
       setBusy(null)
     }

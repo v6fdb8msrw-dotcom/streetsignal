@@ -6,6 +6,7 @@ const lastCall = new Map<string, number>()
 const MIN_GAP_MS: Record<string, number> = {
   'photon.komoot.io': 1000,
   'overpass-api.de': 1500,
+  'nominatim.openstreetmap.org': 1100,
 }
 
 async function waitTurn(host: string) {

@@ -46,7 +46,8 @@ function de(region: string, planung: CoverageCell, bodenwert: CoverageCell, extr
 
 const AT_BASE = {
   laerm: d('EU-Lärmkartierung (EEA)'),
-  hochwasser: d('Amtliche Überflutungsflächen HQ30, HQ100, HQ300 (HWRL 2026, CC BY 4.0), als Karte eingebaut'),
+  // TODO nach Fertigstellung der Kacheln wieder auf d(...) setzen
+  hochwasser: t('Amtliche Überflutungsflächen HQ30/100/300 (HWRL 2026, CC BY 4.0) werden gerade als Karte eingebaut'),
   luft: d('Jahresmittel der nächsten Messstationen (EEA-Statistik)'),
   oepnv: l('Landesweite Verbund-Fahrpläne nur mit Konto und eigener Lizenz; nicht eingebunden'),
   bodenwert: n('Österreich hat keine amtlichen Bodenrichtwerte als offenen Dienst'),

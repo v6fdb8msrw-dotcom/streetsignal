@@ -68,8 +68,8 @@ public/images/  Fotos (Unsplash, siehe CREDITS.md)
 - **Bebauungspläne/Widmung** sind für Hamburg, Berlin, Wien, Oberösterreich (Kartenebene) und die Schweiz (Bauzonen) angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
 - **Bodenrichtwerte** sind für NRW, Hessen, Berlin, Brandenburg, Thüringen, Sachsen, Niedersachsen, Sachsen-Anhalt und Mecklenburg-Vorpommern angebunden, Hamburg als Kartenebene. Bayern, Baden-Württemberg, Saarland, Bremen, Schleswig-Holstein und Rheinland-Pfalz geben keinen frei nutzbaren Dienst her (Gründe in docs/QUELLEN.md), dort Link zum Portal. Österreich und die Schweiz haben kein vergleichbares offenes System.
 - **Fahrpläne:** Fern-, Regional- und Nahverkehr in ganz Deutschland (Stichtag Mittwoch 04.11.2026, Sollfahrplan). Neu aufbereiten: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
-- **Luftqualität:** Jahresmittel 2025 der UBA-Stationen, Aufbereitung `node tools/data/build-air.mjs 2025`.
-- **Hochwasser:** BfG-Gefahrenflächen nur für Deutschland, ohne Starkregen.
+- **Luftqualität:** Deutschland Jahresmittel 2025 der UBA-Stationen (`node tools/data/build-air.mjs 2025`), Österreich aus der EEA-Jahresstatistik (`node tools/data/build-air-eea.mjs AT 2025`), Schweiz als modellierte Klasse am Punkt (BAFU-Karten).
+- **Hochwasser:** Deutschland BfG-Gefahrenflächen, Schweiz Aquaprotect (grobe Übersicht), jeweils ohne Starkregen. Österreich: amtliche Überflutungsflächen HQ30/100/300 werden aufbereitet.
 - **Lärm:** EU-Kartierung 2022 deckt Ballungsräume und Hauptverkehrswege ab; „keine Klasse“ heißt nicht „ruhig“. Zusätzlich wird ein Ring von 75 m abgetastet.
 - **Baustellen** kommen aus OpenStreetMap und sind unvollständig; Autobahn-Baustellen nur als Link.
 - **Ratsvorlagen** gibt es nur für Kommunen mit OParl-Schnittstelle; Vorlagen sind nicht verortet.

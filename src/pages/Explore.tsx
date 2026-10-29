@@ -43,7 +43,7 @@ export function LayerPanel() {
                       {id === 'noise_regional' && <small>NRW, Berlin, Schweiz · ab Stadtteil-Zoom</small>}
                       {id === 'bplan' && <small>Hamburg, Berlin · ab Stadtteil-Zoom</small>}
                       {id === 'landvalue' && <small>NRW, Hessen · ab Straßen-Zoom</small>}
-                      {id === 'flood' && <small>Deutschland · HQ100 und extrem, Fluss und Küste</small>}
+                      {id === 'flood' && <small>Deutschland (BfG) und Schweiz (Aquaprotect)</small>}
                       {id === 'zoning' && <small>Wien, Oberösterreich, Schweiz</small>}
                       {id === 'transit_quality' && <small>Schweiz</small>}
                       {id.startsWith('noise_') && id !== 'noise_regional' && <small>EU-Lärmkartierung 2022 · {hint.length ? 'ganz DACH' : ''}</small>}

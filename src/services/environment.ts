@@ -23,7 +23,7 @@ export interface Section<T> {
 }
 
 /** Bei jeder neuen Quelle erhöhen: ältere gespeicherte Berichte werden dann automatisch neu abgefragt */
-export const REPORT_VERSION = 4
+export const REPORT_VERSION = 5
 
 export interface EnvReport {
   id: string
@@ -76,8 +76,8 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
     planning: pending(['hh_bplan', 'be_bplan']),
     landValue: pending(['boris_d']),
     council: pending(['oparl']),
-    flood: pending(['bfg_flood']),
-    air: pending(['uba_air']),
+    flood: pending([]),
+    air: pending([]),
     transit: pending(['gtfs_de', 'ch_oev']),
   }
   const emit = () => onPartial?.({ ...report })
@@ -164,14 +164,20 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
 
   if (r.flood?.data?.covered) {
     const hit = (['haeufig', 'hq100', 'extrem'] as FloodScenario[]).filter((s) => r.flood!.data!.inArea[s])
-    if (hit.length) facts.push(`Liegt in einer Hochwassergefahrenfläche, Szenario: ${FLOOD_LABEL[hit[0]]} (BfG).`)
-    else facts.push('Liegt in keiner kartierten Hochwassergefahrenfläche (Umkreis etwa 25 m), auch nicht bei extremem Hochwasser (BfG). Starkregen ist darin nicht enthalten.')
+    const fl = r.flood.data
+    const src = fl.sourceId === 'ch_flood' ? 'BAFU Aquaprotect' : fl.sourceId === 'at_flood' ? 'BMLUK/Umweltbundesamt' : 'BfG'
+    if (hit.length) facts.push(`Liegt in einer Hochwassergefahrenfläche, Szenario: ${fl.labels?.[hit[0]] ?? FLOOD_LABEL[hit[0]]} (${src}).`)
+    else facts.push(`Liegt in keiner kartierten Hochwassergefahrenfläche, auch nicht im seltensten Szenario (${src}). Starkregen ist darin nicht enthalten.`)
   }
 
-  if (r.air?.data?.stations.length) {
+  if (r.air?.data?.model) {
+    const m = r.air.data.model
+    const f = (v: [number, number | null] | null) => (v ? (v[1] === null ? `über ${v[0]}` : `${v[0]}–${v[1]}`) : 'k. A.')
+    facts.push(`Luft am Punkt (BAFU-Modell, Jahresmittel ${r.air.data.year}): NO₂ ${f(m.no2)}, PM10 ${f(m.pm10)}, PM2,5 ${f(m.pm25)} µg/m³.`)
+  } else if (r.air?.data?.stations.length) {
     const s0 = r.air?.data.stations[0]
     const vals = [s0.no2 !== undefined && `NO₂ ${s0.no2} µg/m³`, s0.pm25 !== undefined && `PM2,5 ${s0.pm25} µg/m³`, s0.pm10 !== undefined && `PM10 ${s0.pm10} µg/m³`].filter(Boolean).join(', ')
-    facts.push(`Nächste Luftmessstation: ${s0.name} (${s0.type}) in ${fmtM(s0.distanceM)}, Jahresmittel ${r.air?.data.year}: ${vals} (Umweltbundesamt).`)
+    facts.push(`Nächste Luftmessstation: ${s0.name} (${s0.type}) in ${fmtM(s0.distanceM)}, Jahresmittel ${r.air?.data.year}: ${vals} (${r.air?.data.sourceId === 'eea_air' ? 'EEA' : 'Umweltbundesamt'}).`)
   }
 
   if (r.planning.data?.covered) {

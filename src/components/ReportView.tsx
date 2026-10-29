@@ -246,13 +246,13 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
               <ul className="flood">
                 {(['haeufig', 'hq100', 'extrem'] as FloodScenario[]).map((sc) => (
                   <li key={sc} className={report.flood!.data!.inArea[sc] ? 'in' : 'out'}>
-                    <span>{FLOOD_LABEL[sc]}</span>
+                    <span>{report.flood!.data!.labels?.[sc] ?? FLOOD_LABEL[sc]}</span>
                     <b>{report.flood!.data!.inArea[sc] ? 'betroffen' : 'nicht betroffen'}</b>
                   </li>
                 ))}
               </ul>
               <p className="fine">{report.flood.data.note}</p>
-              <SourceLine ids={['bfg_flood']} dataDate={report.flood.data.reportYear ? `Berichtsjahr ${report.flood.data.reportYear}` : null} fetchedAt={report.flood.data.fetchedAt} />
+              <SourceLine ids={[report.flood.data.sourceId ?? 'bfg_flood']} dataDate={report.flood.data.reportYear ? `Berichtsjahr ${report.flood.data.reportYear}` : null} fetchedAt={report.flood.data.fetchedAt} />
             </>
           ) : (
             <p className="muted">{report.flood.data.note}</p>
@@ -268,7 +268,31 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
         {!report.air ? (
           <p className="muted">In dieser älteren Analyse noch nicht enthalten. „Neu prüfen“ ergänzt sie.</p>
         ) : report.air.data ? (
-          report.air.data.stations.length ? (
+          report.air.data.model ? (
+            <>
+              <table className="noise air">
+                <thead>
+                  <tr>
+                    <th>Am Punkt (Modell)</th>
+                    <th>NO₂</th>
+                    <th>PM10</th>
+                    <th>PM2,5</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Jahresmittel {report.air.data.year}</td>
+                    {(['no2', 'pm10', 'pm25'] as const).map((p) => {
+                      const r = report.air!.data!.model![p]
+                      return <td key={p}>{r ? (r[1] === null ? `über ${r[0]}` : `${r[0]}–${r[1]}`) : '–'}</td>
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+              <p className="fine">Angaben in µg/m³. {report.air.data.note}</p>
+              <SourceLine ids={[report.air.data.sourceId ?? 'ch_air']} dataDate={`Jahresmittel ${report.air.data.year}`} />
+            </>
+          ) : report.air.data.stations.length ? (
             <>
               <table className="noise air">
                 <thead>
@@ -298,7 +322,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
               <p className="fine">
                 Jahresmittel {report.air.data.year} in µg/m³. Zur Einordnung die EU-Grenzwerte im Jahresmittel: NO₂ {EU_LIMIT.no2}, PM10 {EU_LIMIT.pm10}, PM2,5 {EU_LIMIT.pm25}. {report.air.data.note}
               </p>
-              <SourceLine ids={['uba_air']} dataDate={`Jahresmittel ${report.air.data.year}`} />
+              <SourceLine ids={[report.air.data.sourceId ?? 'uba_air']} dataDate={`Jahresmittel ${report.air.data.year}`} />
             </>
           ) : (
             <p className="muted">{report.air.data.note}</p>

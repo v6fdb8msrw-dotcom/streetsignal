@@ -1,6 +1,6 @@
 # Datenquellen
 
-Stand der Prüfung: 26.10.2026, Erweiterung 27.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schlüssel, Abruf direkt aus dem Browser (CORS) und die Lizenzangabe des Dienstes selbst (WMS-Capabilities bzw. Dienstbeschreibung). Die Liste in der App (`src/sources/registry.ts`) ist dieselbe.
+Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schlüssel, Abruf direkt aus dem Browser (CORS) und die Lizenzangabe des Dienstes selbst (WMS-Capabilities bzw. Dienstbeschreibung). Die Liste in der App (`src/sources/registry.ts`) ist dieselbe.
 
 ## Umgebung und Planung
 
@@ -17,7 +17,15 @@ Stand der Prüfung: 26.10.2026, Erweiterung 27.10.2026. Geprüft wurden Erreichb
 | Bebauungspläne Berlin | Planung | ja | nein | – | WMS 1.3.0 + GetFeatureInfo | Planname, Geltungsbereich, Rechtsstand, Inhalte, Daten, PDF | dl-de/zero-2-0 | nur Berlin |
 | BORIS.NRW | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo | Wert €/m², Stichtag, Nutzung, Ortsteil, Gutachterausschuss, Dokument | dl-de/zero-2-0 (laut Open.NRW) | Zonenwert, kein Verkehrswert |
 | BORIS Hessen | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (gds-srv.hessen.de) | Wert €/m², Stichtag, Nutzung, Entwicklungszustand, Gutachterausschuss | dl-de/zero-2-0; laut Dienst „jede Nutzung ohne Einschränkung“, kostenfrei nach § 24 HVGG | Zonenwert, kein Verkehrswert |
-| BORIS-D / übrige Landesportale | Bodenrichtwerte | ja | nein | – | nur Link | – | je Land | keine belastbare offene Lizenz für automatischen Abruf gefunden |
+| Bodenrichtwerte Berlin | Bodenrichtwerte | ja | nein | – | WMS 1.3.0 + GetFeatureInfo (JSON) | Wert, Stichtag, Nutzung, Bezirk | dl-de/zero-2-0 | Stichtag 01.01.2025 |
+| BORIS Brandenburg | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (AdV-GML) | Wert, Stichtag, Nutzung, Zone | dl-de/by-2-0, „© GeoBasis-DE/LGB, dl-de/by-2-0“ | |
+| BORIS Thüringen | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (Text) | Wert, Stichtag, Nutzung, Zone, Gemeinde, Gutachterausschuss | CC BY 4.0, „© GDI-Th“ | keine Kartenebene (kein EPSG:3857) |
+| BORIS.SACHSEN | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (Text) | Wert, Stichtag, Nutzung, Gutachterausschuss, Umrechnungstabelle | dl-de/by-2-0, laut Dienst erlaubnis- und gebührenfrei, „Quelle: GeoSN, dl-de/by-2-0“ | |
+| BORIS Niedersachsen | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (GML), Ebene Bauland | Wert, Stichtag, Nutzung, Zone, Gutachterausschuss | dl-de/by-2-0 (LGLN Open Data) | nur Bauland |
+| BORIS Sachsen-Anhalt | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (AdV-GML), Ebene Bauland | Wert, Stichtag, Nutzung, Zone | dl-de/by-2-0, „© GeoBasis-DE / LVermGeo ST (Gutachterausschuss für Grundstückswerte in Sachsen-Anhalt)“ | nur Bauland |
+| BORIS Mecklenburg-Vorpommern | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (Text) | Wert, Stichtag, Nutzung, Ortsteil | CC BY 4.0 laut Dienst-Metadaten (GDI-DE), „© GeoBasis-DE/M-V 2025“; die Capabilities verweisen zusätzlich auf die GutALVO | |
+| Bodenrichtwerte Hamburg | Bodenrichtwerte | ja | nein | – | WMS (nur Kartenebene) | – | dl-de/by-2-0, „Freie und Hansestadt Hamburg, Landesbetrieb Geoinformation und Vermessung“ | Abfrage am Punkt liefert keinen Wert |
+| BORIS-D / übrige Landesportale | Bodenrichtwerte | ja | nein | – | nur Link | – | je Land | Bayern und Saarland nur Ansicht im Portal; Baden-Württemberg nur nicht kommerziell; Bremen gebührenpflichtig; Schleswig-Holstein ohne offene Lizenz; Rheinland-Pfalz: Basisdienst laut Katalog dl-de/by, Dienstadresse aber nicht veröffentlicht |
 | Hochwassergefahrenflächen (BfG) | Naturgefahren | ja | nein | – | ArcGIS MapServer (Bild, Abfrage am Punkt) | Betroffenheit häufig/HQ100/extrem, Berichtsjahr | GeoNutzV des Bundes: kostenlos, auch kommerziell, Quellenvermerk | Deutschland; keine kleinen Bäche, kein Starkregen |
 | Luftqualität Umweltbundesamt | Umwelt | ja | nein | – | einmalig aufbereitet (keine Browser-Freigabe der API) | Jahresmittel NO₂, PM10, PM2,5 je Station | § 12a EGovG laut UBA-Nutzungsbedingungen: kommerziell und nicht kommerziell, Vermerk „Umweltbundesamt“, Änderungen kennzeichnen | Wert gilt an der Station |
 | Fahrpläne gtfs.de (DELFI) | Verkehr | ja | nein | – | GTFS, einmalig zu Abfahrten je Haltestelle aufbereitet | Haltestelle, Lage, Abfahrten am Stichtag, Verkehrsmittel | CC BY 4.0; Feeds enthalten teils OpenStreetMap-Daten (ODbL) | Sollfahrplan am 04.11.2026, ohne Gewähr; rund 240.000 Stationen |

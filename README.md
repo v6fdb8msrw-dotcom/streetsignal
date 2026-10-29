@@ -66,7 +66,7 @@ public/images/  Fotos (Unsplash, siehe CREDITS.md)
 ## Bekannte Einschränkungen
 
 - **Bebauungspläne/Widmung** sind für Hamburg, Berlin, Wien, Oberösterreich (Kartenebene) und die Schweiz (Bauzonen) angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
-- **Bodenrichtwerte** sind für NRW und Hessen angebunden; andernorts Link zu BORIS. Österreich und die Schweiz haben kein vergleichbares offenes System.
+- **Bodenrichtwerte** sind für NRW, Hessen, Berlin, Brandenburg, Thüringen, Sachsen, Niedersachsen, Sachsen-Anhalt und Mecklenburg-Vorpommern angebunden, Hamburg als Kartenebene. Bayern, Baden-Württemberg, Saarland, Bremen, Schleswig-Holstein und Rheinland-Pfalz geben keinen frei nutzbaren Dienst her (Gründe in docs/QUELLEN.md), dort Link zum Portal. Österreich und die Schweiz haben kein vergleichbares offenes System.
 - **Fahrpläne:** Fern-, Regional- und Nahverkehr in ganz Deutschland (Stichtag Mittwoch 04.11.2026, Sollfahrplan). Neu aufbereiten: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
 - **Luftqualität:** Jahresmittel 2025 der UBA-Stationen, Aufbereitung `node tools/data/build-air.mjs 2025`.
 - **Hochwasser:** BfG-Gefahrenflächen nur für Deutschland, ohne Starkregen.

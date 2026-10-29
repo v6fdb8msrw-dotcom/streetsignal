@@ -386,7 +386,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                 ))}
               </ul>
               <p className="fine">{report.landValue.data.note}</p>
-              <SourceLine ids={[report.landValue.data.portal?.label === 'BORIS Hessen' ? 'he_boris' : 'nrw_boris']} fetchedAt={report.landValue.data.fetchedAt} />
+              <SourceLine ids={[report.landValue.data.sourceId ?? (report.landValue.data.portal?.label === 'BORIS Hessen' ? 'he_boris' : 'nrw_boris')]} fetchedAt={report.landValue.data.fetchedAt} />
             </>
           ) : (
             <p className="muted">

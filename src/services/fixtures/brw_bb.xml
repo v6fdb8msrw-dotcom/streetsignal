@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gml:FeatureCollection gml:id="collection.0" xmlns:br="http://www.adv-online.de/namespaces/adv/br/3.0" xmlns:adv="http://www.adv-online.de/namespaces/adv/gid/7.1" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.adv-online.de/namespaces/adv/br/3.0 https://isk.geobasis-bb.de/schema/BORIS/3.0/br.xsd http://www.opengis.net/gml/3.2 https://isk.geobasis-bb.de/schema/NAS/7.1/ogc/gml/3.2.1/gml.xsd">
+<gml:featureMember>
+<br:BR_Bodenrichtwert gml:id="DEBBBR004Wg0HN1z">
+<gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBBBR004Wg0HN1z</gml:identifier>
+<adv:lebenszeitintervall>
+<adv:AA_Lebenszeitintervall>
+<adv:beginnt>2026-01-01T00:00:00Z</adv:beginnt>
+</adv:AA_Lebenszeitintervall>
+</adv:lebenszeitintervall>
+<adv:modellart>
+<adv:AA_Modellart>
+<adv:advStandardModell>BRM</adv:advStandardModell>
+</adv:AA_Modellart>
+</adv:modellart>
+<br:basiskarte>
+<br:BR_Basiskarte_Bodenrichtwert>
+<br:bezeichnung>BasemapBB2025</br:bezeichnung>
+<br:massstabszahl>10000</br:massstabszahl>
+</br:BR_Basiskarte_Bodenrichtwert>
+</br:basiskarte>
+<br:beitragsrechtlicherZustand>1000</br:beitragsrechtlicherZustand>
+<br:bodenrichtwert>1200.0</br:bodenrichtwert>
+<br:bodenrichtwertKlassifikation>1000</br:bodenrichtwertKlassifikation>
+<br:bodenrichtwertNummer>00401077</br:bodenrichtwertNummer>
+<br:bodenrichtwertzoneName>Potsdam, Leipziger Straße</br:bodenrichtwertzoneName>
+<br:entwicklungszustand>1000</br:entwicklungszustand>
+<br:gemeinde>
+<adv:AX_Gemeindekennzeichen>
+<adv:land>12</adv:land>
+<adv:regierungsbezirk>0</adv:regierungsbezirk>
+<adv:kreis>54</adv:kreis>
+<adv:gemeinde>000</adv:gemeinde>
+</adv:AX_Gemeindekennzeichen>
+</br:gemeinde>
+<br:geschossflaechenzahl>1.8</br:geschossflaechenzahl>
+<br:gutachterausschuss>
+<adv:AX_Dienststelle_Schluessel>
+<adv:land>12</adv:land>
+<adv:stelle>004</adv:stelle>
+</adv:AX_Dienststelle_Schluessel>
+</br:gutachterausschuss>
+<br:nutzung>
+<br:BR_Nutzung_Bodenrichtwert>
+<br:art xlink:href="https://registry.gdi-de.org/codelist/de.adv-online.gid/BR_Art_Nutzung/1230"/>
+</br:BR_Nutzung_Bodenrichtwert>
+</br:nutzung>
+<br:postleitzahl>14473</br:postleitzahl>
+<br:stichtag>2026-01-01</br:stichtag>
+<br:gehoertZu xlink:href="urn:adv:oid:DEBBBR004Wg0HN1f"/>
+<br:umrechnung xlink:href="urn:adv:oid:DEBBBR004Wg1Z10u"/>
+</br:BR_Bodenrichtwert>
+</gml:featureMember>
+<gml:featureMember>
+<br:BR_Bodenrichtwert gml:id="DEBBBR004Wg1x01z">
+<gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBBBR004Wg1x01z</gml:identifier>
+<adv:lebenszeitintervall>
+<adv:AA_Lebenszeitintervall>
+<adv:beginnt>2026-01-01T00:00:00Z</adv:beginnt>
+</adv:AA_Lebenszeitintervall>
+</adv:lebenszeitintervall>
+<adv:modellart>
+<adv:AA_Modellart>
+<adv:advStandardModell>BRM</adv:advStandardModell>
+</adv:AA_Modellart>
+</adv:modellart>
+<br:basiskarte>
+<br:BR_Basiskarte_Bodenrichtwert>
+<br:bezeichnung>BasemapBB2025</br:bezeichnung>
+<br:massstabszahl>100000</br:massstabszahl>
+</br:BR_Basiskarte_Bodenrichtwert>
+</br:basiskarte>
+<br:bodenrichtwert>0.4</br:bodenrichtwert>
+<br:bodenrichtwertKlassifikation>1000</br:bodenrichtwertKlassifikation>
+<br:bodenrichtwertNummer>00407502</br:bodenrichtwertNummer>
+<br:bodenrichtwertzoneName>Potsdam, Forst</br:bodenrichtwertzoneName>
+<br:entwicklungszustand>4000</br:entwicklungszustand>
+<br:gemeinde>
+<adv:AX_Gemeindekennzeichen>
+<adv:land>12</adv:land>
+<adv:regierungsbezirk>0</adv:regierungsbezirk>
+<adv:kreis>54</adv:kreis>
+<adv:gemeinde>000</adv:gemeinde>
+</adv:AX_Gemeindekennzeichen>
+</br:gemeinde>
+<br:gutachterausschuss>
+<adv:AX_Dienststelle_Schluessel>
+<adv:land>12</adv:land>
+<adv:stelle>004</adv:stelle>
+</adv:AX_Dienststelle_Schluessel>
+</br:gutachterausschuss>
+<br:nutzung>
+<br:BR_Nutzung_Bodenrichtwert>
+<br:art xlink:href="https://registry.gdi-de.org/codelist/de.adv-online.gid/BR_Art_Nutzung/2800"/>
+</br:BR_Nutzung_Bodenrichtwert>
+</br:nutzung>
+<br:stichtag>2026-01-01</br:stichtag>
+<br:gehoertZu xlink:href="urn:adv:oid:DEBBBR004Wg1x01f"/>
+</br:BR_Bodenrichtwert>
+</gml:featureMember>
+<gml:featureMember>
+<br:BR_Bodenrichtwert gml:id="DEBBBR004Wg2531z">
+<gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBBBR004Wg2531z</gml:identifier>
+<adv:lebenszeitintervall>
+<adv:AA_Lebenszeitintervall>
+<adv:beginnt>2026-01-01T00:00:00Z</adv:beginnt>
+</adv:AA_Lebenszeitintervall>
+</adv:lebenszeitintervall>
+<adv:modellart>
+<adv:AA_Modellart>
+<adv:advStandardModell>BRM</adv:advStandardModell>
+</adv:AA_Modellart>
+</adv:modellart>
+<br:ackerzahl>25</br:ackerzahl>
+<br:ackerzahl>50</br:ackerzahl>
+<br:basiskarte>
+<br:BR_Basiskarte_Bodenrichtwert>
+<br:bezeichnung>BasemapBB2025</br:bezeichnung>
+<br:massstabszahl>100000</br:massstabszahl>
+</br:BR_Basiskarte_Bodenrichtwert>
+</br:basiskarte>
+<br:bodenrichtwert>1.4</br:bodenrichtwert>
+<br:bodenrichtwertKlassifikation>1000</br:bodenrichtwertKlassifikation>
+<br:bodenrichtwertNummer>00408001</br:bodenrichtwertNummer>
+<br:bodenrichtwertzoneName>Potsdam, Acker</br:bodenrichtwertzoneName>
+<br:entwicklungszustand>4000</br:entwicklungszustand>
+<br:gemeinde>
+<adv:AX_Gemeindekennzeichen>
+<adv:land>12</adv:land>
+<adv:regierungsbezirk>0</adv:regierungsbezirk>
+<adv:kreis>54</adv:kreis>
+<adv:gemeinde>000</adv:gemeinde>
+</adv:AX_Gemeindekennzeichen>
+</br:gemeinde>
+<br:gutachterausschuss>
+<adv:AX_Dienststelle_Schluessel>
+<adv:land>12</adv:land>
+<adv:stelle>004</adv:stelle>
+</adv:AX_Dienststelle_Schluessel>
+</br:gutachterausschuss>
+<br:nutzung>
+<br:BR_Nutzung_Bodenrichtwert>
+<br:art xlink:href="https://registry.gdi-de.org/codelist/de.adv-online.gid/BR_Art_Nutzung/2100"/>
+</br:BR_Nutzung_Bodenrichtwert>
+</br:nutzung>
+<br:stichtag>2026-01-01</br:stichtag>
+<br:gehoertZu xlink:href="urn:adv:oid:DEBBBR004Wg2531f"/>
+</br:BR_Bodenrichtwert>
+</gml:featureMember>
+<gml:featureMember>
+<br:BR_Bodenrichtwert gml:id="DEBBBR004Wg2LB1z">
+<gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBBBR004Wg2LB1z</gml:identifier>
+<adv:lebenszeitintervall>
+<adv:AA_Lebenszeitintervall>
+<adv:beginnt>2026-01-01T00:00:00Z</adv:beginnt>
+</adv:AA_Lebenszeitintervall>
+</adv:lebenszeitintervall>
+<adv:modellart>
+<adv:AA_Modellart>
+<adv:advStandardModell>BRM</adv:advStandardModell>
+</adv:AA_Modellart>
+</adv:modellart>
+<br:basiskarte>
+<br:BR_Basiskarte_Bodenrichtwert>
+<br:bezeichnung>BasemapBB2025</br:bezeichnung>
+<br:massstabszahl>100000</br:massstabszahl>
+</br:BR_Basiskarte_Bodenrichtwert>
+</br:basiskarte>
+<br:bodenrichtwert>1.3</br:bodenrichtwert>
+<br:bodenrichtwertKlassifikation>1000</br:bodenrichtwertKlassifikation>
+<br:bodenrichtwertNummer>00409001</br:bodenrichtwertNummer>
+<br:bodenrichtwertzoneName>Potsdam, Grünland</br:bodenrichtwertzoneName>
+<br:entwicklungszustand>4000</br:entwicklungszustand>
+<br:gemeinde>
+<adv:AX_Gemeindekennzeichen>
+<adv:land>12</adv:land>
+<adv:regierungsbezirk>0</adv:regierungsbezirk>
+<adv:kreis>54</adv:kreis>
+<adv:gemeinde>000</adv:gemeinde>
+</adv:AX_Gemeindekennzeichen>
+</br:gemeinde>
+<br:gruenlandzahl>15</br:gruenlandzahl>
+<br:gruenlandzahl>45</br:gruenlandzahl>
+<br:gutachterausschuss>
+<adv:AX_Dienststelle_Schluessel>
+<adv:land>12</adv:land>
+<adv:stelle>004</adv:stelle>
+</adv:AX_Dienststelle_Schluessel>
+</br:gutachterausschuss>
+<br:nutzung>
+<br:BR_Nutzung_Bodenrichtwert>
+<br:art xlink:href="https://registry.gdi-de.org/codelist/de.adv-online.gid/BR_Art_Nutzung/2200"/>
+</br:BR_Nutzung_Bodenrichtwert>
+</br:nutzung>
+<br:stichtag>2026-01-01</br:stichtag>
+<br:gehoertZu xlink:href="urn:adv:oid:DEBBBR004Wg2LB1f"/>
+</br:BR_Bodenrichtwert>
+</gml:featureMember>
+</gml:FeatureCollection>

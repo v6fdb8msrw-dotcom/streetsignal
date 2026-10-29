@@ -52,7 +52,7 @@ export function MapView({ pois = [], properties = [], onMapClick, onSelectProper
     m.on('style.load', () => {
       recolor(m)
       for (const o of OVERLAYS) {
-        m.addSource(o.id, { type: 'raster', tiles: [o.tiles], tileSize: 256, attribution: o.attribution, minzoom: o.minzoom ?? 0 })
+        m.addSource(o.id, { type: 'raster', tiles: [o.tiles], tileSize: 256, attribution: o.attribution, minzoom: o.minzoom ?? 0, ...(o.bounds ? { bounds: o.bounds } : {}) })
         m.addLayer({ id: o.id, type: 'raster', source: o.id, paint: { 'raster-opacity': o.opacity }, layout: { visibility: 'none' } })
       }
       m.addSource('radius', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })

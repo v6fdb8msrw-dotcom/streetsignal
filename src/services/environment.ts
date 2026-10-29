@@ -23,7 +23,7 @@ export interface Section<T> {
 }
 
 /** Bei jeder neuen Quelle erhöhen: ältere gespeicherte Berichte werden dann automatisch neu abgefragt */
-export const REPORT_VERSION = 3
+export const REPORT_VERSION = 4
 
 export interface EnvReport {
   id: string
@@ -74,7 +74,7 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
     pois: pending(['overpass']),
     noise: pending(['eea_noise']),
     planning: pending(['hh_bplan', 'be_bplan']),
-    landValue: pending(['nrw_boris', 'boris_d']),
+    landValue: pending(['boris_d']),
     council: pending(['oparl']),
     flood: pending(['bfg_flood']),
     air: pending(['uba_air']),

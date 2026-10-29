@@ -498,11 +498,21 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                   </li>
                 ))}
               </ul>
-              <p className="fine">{report.council.data.note}</p>
+              <p className="fine">
+                {report.council.data.note}
+                {report.council.data.license && ` Lizenz laut Ratsinformationssystem: ${report.council.data.license}.`}
+              </p>
               <SourceLine ids={['oparl']} fetchedAt={report.council.data.fetchedAt} />
             </>
           ) : (
-            <p className="muted">{report.council.data.note}</p>
+            <p className="muted">
+              {report.council.data.note}{' '}
+              {report.council.data.website && (
+                <a href={report.council.data.website} target="_blank" rel="noopener noreferrer">
+                  Ratsinformationssystem öffnen <ExternalLink size={11} />
+                </a>
+              )}
+            </p>
           )
         ) : (
           (report.council.status === 'loading' ? <Pending /> : <Failed msg={report.council.error} />)

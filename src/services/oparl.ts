@@ -1,5 +1,6 @@
 // Kommunale Vorlagen aus Ratsinformationssystemen (OParl). Vorlagen sind nicht georeferenziert:
 // StreetSignal zeigt die neuesten Vorlagen der Kommune und hebt solche mit Bezug zu Straße oder Planung hervor.
+// Inhalte nur, wenn das System selbst eine offene Lizenz angibt (Prüfung 29.10.2026: 8 von 127); sonst nur Link.
 import { cached } from '../store/db.ts'
 import { fetchJson } from './http.ts'
 
@@ -23,6 +24,10 @@ export interface CouncilPaper {
 export interface CouncilResult {
   available: boolean
   system: string | null
+  /** Lizenz laut System (nur gesetzt, wenn offen) */
+  license?: string | null
+  /** Webseite des Ratsinformationssystems, wenn nur verlinkt wird */
+  website?: string | null
   papers: CouncilPaper[]
   note: string
   fetchedAt: string
@@ -54,6 +59,20 @@ export function matchEndpoint(endpoints: Endpoint[], city: string): Endpoint | n
   )
 }
 
+/** Offene Lizenzen, unter denen Titel und Daten der Vorlagen gezeigt werden dürfen */
+export function isOpenLicense(license: string | null | undefined): boolean {
+  if (!license) return false
+  const l = license.toLowerCase()
+  if (/genehmigung|absprache|nicht kommerziell|non-?commercial|nc[- ]|keine bearbeitung|no ?deriv/.test(l)) return false
+  return /creativecommons\.org\/(licenses\/by\/|publicdomain\/zero)|creative commons namensnennung(?! - nicht)|cc[- ]?by(?![- ]?(nc|nd))|cc0|dl-de\/(by|zero)|datenlizenz deutschland|opendatacommons\.org\/licenses\/(odbl|pddl|by)/.test(l)
+}
+
+interface OParlSystem {
+  license?: string
+  website?: string
+  body?: string
+}
+
 const PLANNING_WORDS = /bebauungsplan|b-plan|flächennutzungsplan|bauvorhaben|neubau|bauleitplan|städtebau|sanierung|verkehrsplanung|radweg|straßenbau/i
 
 interface OParlPaper {
@@ -70,10 +89,23 @@ export async function fetchCouncil(city: string | null, street: string | null): 
   if (!city) return { available: false, system: null, papers: [], note: 'Ort unbekannt.', fetchedAt: now }
   const ep = matchEndpoint(await oparlDirectory(), city)
   if (!ep) return { available: false, system: null, papers: [], note: `Für ${city} ist im OParl-Verzeichnis kein Ratsinformationssystem eingetragen.`, fetchedAt: now }
-  return cached(`oparl:papers:${ep.url}:${street ?? ''}`, 12 * 3600 * 1000, async () => {
-    const bodiesUrl = ep.system?.body ?? `${ep.url.replace(/\/system$/, '')}/bodies`
-    const bodies = await fetchJson<{ data?: { paper?: string; name?: string }[] } & { paper?: string }>('oparl', bodiesUrl)
+  return cached(`oparl2:papers:${ep.url}:${street ?? ''}`, 12 * 3600 * 1000, async () => {
+    const system = await fetchJson<OParlSystem>('oparl', ep.url).catch(() => ({}) as OParlSystem)
+    const bodiesUrl = system.body ?? ep.system?.body ?? `${ep.url.replace(/\/system$/, '')}/bodies`
+    const bodies = await fetchJson<{ data?: { paper?: string; name?: string; license?: string; website?: string }[] } & { paper?: string; license?: string; website?: string }>('oparl', bodiesUrl)
     const body = bodies.data?.[0] ?? bodies
+    const license = isOpenLicense(body.license) ? body.license! : isOpenLicense(system.license) ? system.license! : null
+    const website = body.website ?? system.website ?? null
+    if (!license)
+      return {
+        available: false,
+        system: ep.title,
+        license: null,
+        website,
+        papers: [],
+        note: `${ep.title} nennt keine offene Lizenz für die Daten. StreetSignal zeigt die Vorlagen deshalb nicht an, sondern verlinkt nur das Ratsinformationssystem.`,
+        fetchedAt: now,
+      }
     if (!body.paper) return { available: false, system: ep.title, papers: [], note: 'Das System stellt keine Vorlagen bereit.', fetchedAt: now }
     // Zwei Seiten (meist die neuesten 50 Vorlagen); mehr würde den Dienst unnötig belasten
     const first = await fetchJson<{ data: OParlPaper[]; links?: { next?: string } }>('oparl', body.paper)
@@ -89,6 +121,8 @@ export async function fetchCouncil(city: string | null, street: string | null): 
     return {
       available: true,
       system: ep.title,
+      license,
+      website,
       papers: papers.slice(0, 12),
       note: 'Die Vorlagen sind nicht verortet. Hervorgehoben sind Vorlagen, die deine Straße oder Planungsbegriffe im Titel nennen.',
       fetchedAt: now,

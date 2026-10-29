@@ -414,7 +414,7 @@ export const DATA_SOURCES: DataSource[] = [
     status: 'aktiv',
     access: 'OParl-Schnittstelle (Vorlagen, Sitzungen)',
     coverage: '127 Systeme laut Verzeichnis, u. a. Köln, Münster, Bonn, Freiburg, Dresden, München Transparent',
-    license: 'je Kommune',
+    license: 'je Kommune; Inhalte nur bei offener Lizenz des Systems (CC BY, CC0, dl-de), sonst nur Link',
     dataDate: 'laufend',
     limits: 'Nicht jede Kommune bietet OParl an, manche Systeme antworten nicht. Vorlagen sind nicht georeferenziert: StreetSignal sucht nach Ort, Straße und Stichworten.',
     url: 'https://dev.oparl.org',

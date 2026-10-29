@@ -224,3 +224,18 @@ describe('Ländernamen', () => {
     expect(normalizeState('Hessen')).toBe('Hessen')
   })
 })
+
+describe('OParl-Lizenzen', () => {
+  it('erkennt offene und verbotene Lizenzen', async () => {
+    const { isOpenLicense } = await import('./oparl.ts')
+    expect(isOpenLicense('Creative Commons Namensnennung 3.0 Deutschland')).toBe(true)
+    expect(isOpenLicense('https://www.govdata.de/dl-de/zero-2-0')).toBe(true)
+    expect(isOpenLicense('Datenlizenz Deutschland – Namensnennung – Version 2.0')).toBe(true)
+    expect(isOpenLicense('https://creativecommons.org/publicdomain/zero/1.0/')).toBe(true)
+    expect(isOpenLicense('Nutzung nur nach Genehmigung.')).toBe(false)
+    expect(isOpenLicense('Nutzung nur nach vorheriger Absprache')).toBe(false)
+    expect(isOpenLicense('Open')).toBe(false)
+    expect(isOpenLicense(null)).toBe(false)
+    expect(isOpenLicense('CC BY-NC 4.0')).toBe(false)
+  })
+})

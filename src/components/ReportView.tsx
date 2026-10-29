@@ -369,7 +369,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                   ))}
                 </ul>
               ) : (
-                <p className="muted">{report.planning.data.region === 'Wien' || report.planning.data.region === 'Schweiz' ? 'An diesem Punkt ist keine Widmung bzw. Bauzone verzeichnet.' : 'Kein Bebauungsplan an diesem Punkt verzeichnet.'}</p>
+                <p className="muted">{['Wien', 'Schweiz', 'Steiermark', 'Vorarlberg', 'Tirol', 'Kärnten'].includes(report.planning.data.region ?? '') ? 'An diesem Punkt ist keine Widmung bzw. Bauzone verzeichnet.' : ['Nordrhein-Westfalen', 'Baden-Württemberg'].includes(report.planning.data.region ?? '') ? 'Im Landesdienst ist hier kein Bebauungsplan gemeldet. Nicht jede Kommune liefert ihre Pläne dorthin; im Zweifel bei der Gemeinde nachfragen.' : 'Kein Bebauungsplan an diesem Punkt verzeichnet.'}</p>
               )}
               <p className="fine">Ein Plan im Verfahren ist keine genehmigte Baumaßnahme. Rechtsverbindlich ist nur das Originaldokument.</p>
               <SourceLine ids={[PLANNING_SOURCE[report.planning.data.region ?? ''] ?? 'be_bplan']} fetchedAt={report.planning.data.fetchedAt} />

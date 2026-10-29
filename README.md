@@ -65,7 +65,7 @@ public/images/  Fotos (Unsplash, siehe CREDITS.md)
 
 ## Bekannte Einschränkungen
 
-- **Bebauungspläne/Widmung** sind für Hamburg, Berlin, Wien, Oberösterreich (Kartenebene) und die Schweiz (Bauzonen) angebunden; andernorts verlinkt StreetSignal das zuständige Portal.
+- **Bebauungspläne/Widmung:** Bebauungspläne für Hamburg, Berlin, NRW und Baden-Württemberg (landesweite INSPIRE-Dienste, soweit Kommunen liefern); Flächenwidmung für Wien, Steiermark, Vorarlberg, Tirol, Kärnten, Oberösterreich (Kartenebene); Bauzonen Schweiz. Andernorts Link zum zuständigen Portal.
 - **Bodenrichtwerte** sind für NRW, Hessen, Berlin, Brandenburg, Thüringen, Sachsen, Niedersachsen, Sachsen-Anhalt und Mecklenburg-Vorpommern angebunden, Hamburg als Kartenebene. Bayern, Baden-Württemberg, Saarland, Bremen, Schleswig-Holstein und Rheinland-Pfalz geben keinen frei nutzbaren Dienst her (Gründe in docs/QUELLEN.md), dort Link zum Portal. Österreich und die Schweiz haben kein vergleichbares offenes System.
 - **Fahrpläne:** Fern-, Regional- und Nahverkehr in ganz Deutschland (Stichtag Mittwoch 04.11.2026, Sollfahrplan). Neu aufbereiten: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
 - **Luftqualität:** Deutschland Jahresmittel 2025 der UBA-Stationen (`node tools/data/build-air.mjs 2025`), Österreich aus der EEA-Jahresstatistik (`node tools/data/build-air-eea.mjs AT 2025`), Schweiz als modellierte Klasse am Punkt (BAFU-Karten).

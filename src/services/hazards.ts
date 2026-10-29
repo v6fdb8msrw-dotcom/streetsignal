@@ -71,12 +71,89 @@ async function hit(service: string, lat: number, lng: number): Promise<string | 
   return r ? (r.attributes?.REP_YEAR ?? 'unbekannt') : null
 }
 
+/** Österreich: amtliche Überflutungsflächen HWRL 2026 (BMLUK/Umweltbundesamt, CC BY 4.0), vorab als Raster aufbereitet */
+interface AtFloodIndex {
+  cell: number
+  tile: number
+  bits: Record<'hq30' | 'hq100' | 'hq300', number>
+  tiles: Record<string, [number, number]>
+}
+export const AT_FLOOD_LABEL: Record<FloodScenario, string> = {
+  haeufig: 'häufiges Hochwasser (HQ30, etwa alle 30 Jahre)',
+  hq100: 'mittleres Hochwasser (HQ100, etwa alle 100 Jahre)',
+  extrem: 'seltenes Hochwasser (HQ300, etwa alle 300 Jahre)',
+}
+let atIndex: Promise<AtFloodIndex | null> | null = null
+const atTiles = new Map<string, Promise<Uint8Array>>()
+const R = 6378137
+const mx = (lng: number) => ((lng * Math.PI) / 180) * R
+const my = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) * R
+const keyPart = (v: number) => String(v).replace('.', 'p').replace('-', 'm')
+
+async function loadAtTile(key: string): Promise<Uint8Array> {
+  let t = atTiles.get(key)
+  if (!t) {
+    t = fetch(`${import.meta.env.BASE_URL}data/hochwasser-at/${key}.bin`).then(async (r) => {
+      if (!r.ok || !r.body) throw new Error('Hochwasser-Kachel fehlt')
+      return new Uint8Array(await new Response(r.body.pipeThrough(new DecompressionStream('deflate'))).arrayBuffer())
+    })
+    atTiles.set(key, t)
+  }
+  return t
+}
+
+/** Bits am Punkt, mit ±1 Zelle Toleranz (etwa 17 m am Boden) */
+export function atFloodBits(grid: Uint8Array, w: number, h: number, col: number, row: number): number {
+  let bits = 0
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      const r = row + dr
+      const c = col + dc
+      if (r >= 0 && r < h && c >= 0 && c < w) bits |= grid[r * w + c]
+    }
+  return bits
+}
+
+async function fetchFloodAt(lat: number, lng: number): Promise<FloodResult> {
+  atIndex ??= fetch(`${import.meta.env.BASE_URL}data/hochwasser-at/index.json`)
+    .then((r) => (r.ok ? (r.json() as Promise<AtFloodIndex>) : null))
+    .catch(() => null)
+  const idx = await atIndex
+  if (!idx)
+    return { covered: false, inArea: { haeufig: false, hq100: false, extrem: false }, reportYear: null, fetchedAt: new Date().toISOString(), note: 'Die amtlichen Überflutungsflächen Österreichs (CC BY 4.0) werden gerade aufbereitet und folgen in Kürze.' }
+  const lat0 = Math.floor(lat / idx.tile) * idx.tile
+  const lng0 = Math.floor(lng / idx.tile) * idx.tile
+  const key = `${keyPart(lat0)}_${keyPart(lng0)}`
+  const inArea = { haeufig: false, hq100: false, extrem: false }
+  const size = idx.tiles[key]
+  if (size) {
+    const [w, h] = size
+    const grid = await loadAtTile(key)
+    const col = Math.floor((mx(lng) - mx(lng0)) / idx.cell)
+    const row = Math.floor((my(lat0 + idx.tile) - my(lat)) / idx.cell)
+    const bits = atFloodBits(grid, w, h, col, row)
+    inArea.haeufig = (bits & idx.bits.hq30) > 0
+    inArea.hq100 = (bits & idx.bits.hq100) > 0
+    inArea.extrem = (bits & idx.bits.hq300) > 0
+  }
+  return {
+    covered: true,
+    inArea,
+    reportYear: '2026',
+    fetchedAt: new Date().toISOString(),
+    labels: AT_FLOOD_LABEL,
+    sourceId: 'at_flood',
+    note: 'Amtliche Überflutungsflächen nach EU-Hochwasserrichtlinie (Zyklus 2026), zusammengeführt aus Abflussuntersuchungen, Gefahrenzonenplänen und HORA. Aufbereitet als Raster von etwa 17 m, geprüft mit ±1 Zelle. Kleine Gewässer und Starkregen sind nicht überall enthalten.',
+  }
+}
+
 export async function fetchFlood(lat: number, lng: number, country: string | null): Promise<FloodResult> {
   const now = new Date().toISOString()
   const empty = { haeufig: false, hq100: false, extrem: false }
   if (country === 'CH') return fetchFloodCh(lat, lng)
+  if (country === 'AT') return fetchFloodAt(lat, lng)
   if (country && country !== 'DE')
-    return { covered: false, inArea: empty, reportYear: null, fetchedAt: now, note: 'Für Österreich werden die amtlichen Überflutungsflächen gerade aufbereitet.' }
+    return { covered: false, inArea: empty, reportYear: null, fetchedAt: now, note: 'Für dieses Land ist keine freie Hochwasserquelle angebunden.' }
   return cached(`flood2:${lat.toFixed(5)},${lng.toFixed(5)}`, 30 * 24 * 3600 * 1000, async () => {
     const inArea = { ...empty }
     let year: string | null = null

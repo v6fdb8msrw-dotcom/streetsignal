@@ -36,6 +36,12 @@ Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurde
 | Bauzonen Schweiz harmonisiert (ARE) | Planung | ja | nein | Fair Use | geo.admin.ch Abfrage + WMS | Hauptnutzung, Gemeinde | opendata.swiss: kommerziell erlaubt, Quellenangabe | Schweiz; kommunale Zone maßgeblich |
 | Flächenwidmung Wien (generalisiert) | Planung | ja | nein | – | WMS + GetFeatureInfo | Widmung, Bauklasse, Bezirk | CC BY 4.0, „Stadt Wien – data.wien.gv.at“ | generalisiert |
 | Flächenwidmung Oberösterreich (DORIS) | Planung | ja | nein | – | WMS (Kartenebene) | Kartenbild | CC BY 4.0 (Katalog), Dienst „kostenfrei“ | Abfrage liefert nur Codes |
+| Flächenwidmungsplan Steiermark | Planung | ja | nein | – | ArcGIS-Dienst + WMS (gis.stmk.gv.at) | Widmung im Klartext, Bebauungsdichte, Stammplan/Änderung | CC BY 4.0, „© Land Steiermark // GIS-Steiermark“ | rechtsverbindlich nur der Gemeindeplan |
+| Flächenwidmungsplan Vorarlberg | Planung | ja | nein | – | WMS + GetFeatureInfo (VoGIS) | Widmung, Gemeinde, Stand | CC BY 4.0, Land Vorarlberg | |
+| Flächenwidmung Tirol | Planung | ja | nein | – | ArcGIS-Feature-Dienst (tiris) | Widmung mit Paragraf, Stand | CC BY 4.0, Land Tirol | |
+| Flächenwidmung Kärnten | Planung | ja | nein | – | INSPIRE-Dienst des Landes (KAGIS) | Widmungsklasse (HILUCS), Widmungscode, Bescheid, gültig seit | CC BY 4.0, Land Kärnten | Klassen nach EU-Schema, nicht im Gesetzeswortlaut |
+| Bebauungspläne NRW (INSPIRE) | Planung | ja | nein | – | WMS + GetFeatureInfo (IT.NRW) | Nummer, Name, Kommune, Rechtsstand, Datum, Plan-Link | laut Dienst keine Nutzungsbedingungen | nur Kommunen, die liefern |
+| Bebauungspläne Baden-Württemberg (INSPIRE) | Planung | ja | nein | – | WMS + GetFeatureInfo (Geoportal Raumordnung BW) | Name, Aktenzeichen, in Kraft seit | dl-de/by-2-0, „© Daten aus dem Geoportal Raumordnung Baden-Württemberg“ | nur Kommunen, die liefern |
 | OParl-Verzeichnis + Ratsinformationssysteme | Kommunales | ja | nein | – | OParl JSON | Titel, Datum, Art, Aktenzeichen, Link | je Kommune; nur Metadaten und Link | 127 Systeme, nicht alle erreichbar, nicht verortet |
 | Autobahn GmbH (verkehr.autobahn.de) | Baustellen | technisch ja | nein | **keine Lizenz veröffentlicht** (erneut geprüft 27.10.: weder API-Spezifikation noch Mobilithek) | nur Link zur Baustellenkarte | – | – | wird nicht automatisch abgerufen |
 | Unsplash | Fotos | ja | nein | – | im Projekt gespeichert | 4 Fotos | Unsplash-Lizenz | siehe public/images/CREDITS.md |
@@ -45,9 +51,11 @@ Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurde
 
 | Quelle | Grund |
 |---|---|
-| Flächenwidmung Steiermark | Lizenz CC BY 4.0 AT, aber keine bestätigte Dienst-Adresse gefunden; nur verlinkt |
 | Lärmkarten Österreich (laerminfo.at) | CC BY 4.0, aber nur als Download; die EU-Lärmdaten decken dieselbe Kartierung bereits ab |
-| Bebauungspläne einzelner Gemeinden (z. B. Hessen) | Lizenz je Gemeinde verschieden, teils nur nicht kommerziell; nur verlinkt |
+| Bebauungspläne einzelner Gemeinden (z. B. Hessen) | Lizenz je Gemeinde verschieden, teils nur nicht kommerziell; kein landesweiter offener Dienst gefunden; nur verlinkt |
+| Flächenwidmung Salzburg | CC BY 4.0 AT (Land Salzburg), aber nur als Download (165 MB); Einbau als vorab aufbereitete Kacheln geplant |
+| Flächenwidmung Niederösterreich, Burgenland | nicht als offene Daten veröffentlicht; nur verlinkt |
+| ImmobilienScout24 API | Nutzung nur mit Vertrag nach Freigabe durch ImmoScout24, Suche nur als „Content Partner“, teils vergütungspflichtig, Speicherung höchstens 24 Stunden, keine eigenen Datenbanken; Webseite blockt automatische Abrufe (Roboter-Prüfung). Daher weiterhin nur Link plus Übernahme per Text/PDF/Formular |
 
 ## Immobilienportale
 

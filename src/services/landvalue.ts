@@ -1,6 +1,7 @@
 // Amtliche Bodenrichtwerte (Master-Prompt Abschnitt 9). Direkt abgefragt werden nur Länder, deren Dienst
 // eine offene Lizenz hat (dl-de/zero, dl-de/by, CC BY). Sonst Link zum amtlichen Portal.
 import { cached } from '../store/db.ts'
+import { fetchText } from './http.ts'
 import { featureInfo } from './wms.ts'
 
 export interface LandValue {
@@ -14,6 +15,14 @@ export interface LandValue {
   documentUrl: string | null
   /** true = Bauland, false = Land-/Forstwirtschaft oder sonstige Fläche, null = unbekannt */
   buildingLand?: boolean | null
+  /** Obergrenze, wenn der Dienst eine Spanne liefert (Hamburg: normierte Werte je Baublock) */
+  maxEurPerSqm?: number
+}
+
+/** „1.050 €/m²“ oder „1.050–1.350 €/m²“ */
+export function formatLandValue(v: LandValue): string {
+  const f = (x: number) => x.toLocaleString('de-DE')
+  return v.maxEurPerSqm && v.maxEurPerSqm !== v.valueEurPerSqm ? `${f(v.valueEurPerSqm)}–${f(v.maxEurPerSqm)} €/m²` : `${f(v.valueEurPerSqm)} €/m²`
 }
 
 export interface LandValueResult {
@@ -237,6 +246,39 @@ export function parseBerlinBrw(json: { features?: { properties?: Record<string, 
   })
 }
 
+/** Hamburg: Übersicht der normierten Bodenrichtwerte je Baublock (WFS, GML) */
+export function parseHamburgUek(xml: string): LandValue[] {
+  return xml.split('<wfs:member>').slice(1).flatMap((m) => {
+    const tag = (t: string) => m.match(new RegExp(`<app:${t}>([^<]*)</app:${t}>`))?.[1]?.trim() || null
+    const min = num(tag('minimaler_normierter_brw'))
+    const max = num(tag('maximaler_normierter_brw'))
+    if (!min) return []
+    return [{
+      valueEurPerSqm: min,
+      maxEurPerSqm: max ?? undefined,
+      referenceDate: isoDate(tag('stichtag')),
+      usage: tag('nutzung') ? `${tag('nutzung')} (normiert)` : null,
+      district: tag('baublock') ? `Baublock ${tag('baublock')}` : null,
+      municipality: 'Hamburg',
+      committee: 'Gutachterausschuss für Grundstückswerte in Hamburg',
+      documentUrl: 'https://geoportal-hamburg.de/boris/',
+      buildingLand: true,
+    }]
+  })
+}
+
+async function loadHamburg(lat: number, lng: number): Promise<LandValue[]> {
+  const d = 0.0002
+  const base = 'https://geodienste.hamburg.de/HH_WFS_UEKnormierteBodenrichtwerte'
+  const types = ['efh', 'mfh', 'gh', 'bh']
+  const xmls = await Promise.all(
+    types.map((t) =>
+      fetchText('hh_brw', `${base}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app:lgv_brw_uek_${t}&COUNT=1&BBOX=${lat - d},${lng - d},${lat + d},${lng + d},urn:ogc:def:crs:EPSG::4326`),
+    ),
+  )
+  return xmls.flatMap(parseHamburgUek)
+}
+
 interface StateService {
   sourceId: string
   portal: { label: string; url: string }
@@ -285,6 +327,11 @@ const STATES: Record<string, StateService> = {
     portal: { label: 'BORIS Sachsen-Anhalt', url: 'https://www.lvermgeo.sachsen-anhalt.de/de/boris.html' },
     load: async (lat, lng) => parseAdvGml(await featureInfo('st_boris', 'https://www.geodatenportal.sachsen-anhalt.de/ows_st_lvermgeo_brw2026', 'Bauland', lat, lng, 'text/xml')),
   },
+  Hamburg: {
+    sourceId: 'hh_brw',
+    portal: { label: 'BORIS.HH', url: 'https://geoportal-hamburg.de/boris/' },
+    load: loadHamburg,
+  },
   'Mecklenburg-Vorpommern': {
     sourceId: 'mv_boris',
     portal: { label: 'BORIS Mecklenburg-Vorpommern', url: 'https://www.geoportal-mv.de' },
@@ -297,10 +344,9 @@ const LINK_ONLY: Record<string, { label: string; url: string; why: string }> = {
   Bayern: { label: 'BORIS Bayern', url: 'https://www.boris-bayern.de', why: 'Bayern gibt Bodenrichtwerte nur zur Ansicht im eigenen Portal frei, ein Dienst steht nur Behörden offen.' },
   'Baden-Württemberg': { label: 'BORIS-BW', url: 'https://www.gutachterausschuesse-bw.de/borisbw/', why: 'Die BORIS-BW-Lizenz erlaubt nur nicht kommerzielle Nutzung.' },
   Saarland: { label: 'BORIS Saarland', url: 'https://geoportal.saarland.de', why: 'Das Saarland erlaubt nur die Ansicht im eigenen Portal.' },
-  Bremen: { label: 'Bodenrichtwerte Bremen', url: 'https://www.gutachterausschuss.bremen.de', why: 'Bremen und Bremerhaven geben die Werte nur gegen Gebühr ab.' },
+  Bremen: { label: 'Bodenrichtwerte Bremen', url: 'https://www.gutachterausschuss.bremen.de', why: 'Für die Stadt Bremen nennt der Katalog CC BY 4.0, eine abfragbare Dienstadresse ist aber nicht veröffentlicht; Bremerhaven gibt die Werte nur gegen Gebühr ab.' },
   'Schleswig-Holstein': { label: 'BORIS Schleswig-Holstein', url: 'https://danord.gdi-sh.de/viewer/resources/apps/VBORIS/index.html', why: 'Für Schleswig-Holstein ist kein Dienst mit offener Lizenz veröffentlicht.' },
-  'Rheinland-Pfalz': { label: 'BORIS Rheinland-Pfalz', url: 'https://www.boris.rlp.de', why: 'Laut Katalog ist der Basisdienst dl-de/by-2.0, seine Dienstadresse ist aber nicht veröffentlicht.' },
-  Hamburg: { label: 'Bodenrichtwerte Hamburg', url: 'https://www.geoportal-hamburg.de/boris/', why: 'Der freie Hamburger Dienst (dl-de/by) zeigt die Zonen als Kartenebene, liefert am Punkt aber nur die Zonennummer, nicht den Wert.' },
+  'Rheinland-Pfalz': { label: 'BORIS Rheinland-Pfalz', url: 'https://www.boris.rlp.de', why: 'Die zonalen Bodenrichtwerte gibt es nur mit nutzerabhängiger Zugangsbeschränkung; der freie Basisdienst hat keine veröffentlichte Dienstadresse.' },
 }
 
 const NOTE = 'Bodenrichtwerte sind Durchschnittswerte einer Zone, kein Verkehrswert eines bestimmten Grundstücks.'

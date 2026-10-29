@@ -1,4 +1,5 @@
 import { Info } from 'lucide-react'
+import { formatLandValue } from '../services/landvalue.ts'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { area, date, money } from '../components/format.ts'
@@ -139,7 +140,7 @@ export function Compare() {
                     <td>Bodenrichtwert</td>
                     {rows.map((r) => {
                       const v = reports.get(r.property.id)?.landValue.data?.values[0]
-                      return <td key={r.property.id}>{v ? `${v.valueEurPerSqm.toLocaleString('de-DE')} €/m² (Stichtag ${date(v.referenceDate)})` : 'nicht verfügbar'}</td>
+                      return <td key={r.property.id}>{v ? `${formatLandValue(v)} (Stichtag ${date(v.referenceDate)})` : 'nicht verfügbar'}</td>
                     })}
                   </tr>
                   <tr>

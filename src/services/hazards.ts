@@ -3,6 +3,7 @@
 import { cached } from '../store/db.ts'
 import { fetchJson } from './http.ts'
 import { wmsImage } from './pixel.ts'
+import { featureInfo } from './wms.ts'
 
 export const BFG = 'https://geoportal.bafg.de/arcgis/rest/services/HWRMRL'
 
@@ -31,6 +32,63 @@ export interface FloodResult {
   /** Abweichende Bezeichnungen der Szenarien (Schweiz, Österreich) */
   labels?: Record<FloodScenario, string>
   sourceId?: string
+  /** Starkregen: maximale Überflutungstiefe in cm am Punkt (BKG-Hinweiskarte), null = keine Angabe */
+  heavyRain?: HeavyRain | null
+}
+
+export interface HeavyRain {
+  /** außergewöhnliches Ereignis (etwa 100-jährlich) */
+  rareCm: number | null
+  /** extremes Ereignis (100 mm in einer Stunde, NRW 90 mm) */
+  extremeCm: number | null
+  note: string
+}
+
+/** BKG-Antwort: je Landes-Ebene ein Block „…:he_tiefe_agw' … Tiefe = 9.0“. -9999 = keine Daten (u. a. Gebäude). */
+export function parseStarkregen(text: string, prefix?: string): number | null {
+  const vals: number[] = []
+  for (const m of text.matchAll(/:(\w\w)_tiefe_\w+'[^]*?Tiefe = (-?[\d.]+)/g)) {
+    if (prefix && m[1] !== prefix) continue
+    const v = Number(m[2])
+    if (Number.isFinite(v) && v >= 0) vals.push(v)
+  }
+  return vals.length ? Math.max(...vals) : null
+}
+
+const STARKREGEN = 'https://sgx.geodatenzentrum.de/wms_starkregen'
+
+/** Kürzel der Landes-Ebenen in der BKG-Karte; Bayern und Baden-Württemberg fehlen */
+export const STARKREGEN_PREFIX: Record<string, string> = {
+  Brandenburg: 'bb', Berlin: 'be', Bremen: 'hb', Hessen: 'he', Hamburg: 'hh', 'Mecklenburg-Vorpommern': 'mv', Niedersachsen: 'ni',
+  'Nordrhein-Westfalen': 'nw', 'Rheinland-Pfalz': 'rp', 'Schleswig-Holstein': 'sh', Saarland: 'sl', Sachsen: 'sn', 'Sachsen-Anhalt': 'st', Thüringen: 'th',
+}
+
+/** Ring von acht Punkten im Abstand von etwa 15 m plus Mittelpunkt (die Adresse liegt oft auf dem Gebäude, das das Modell ausspart) */
+function ring15(lat: number, lng: number): [number, number][] {
+  const dLat = 15 / 111320
+  const dLng = 15 / (111320 * Math.cos((lat * Math.PI) / 180))
+  return [[lat, lng], ...Array.from({ length: 8 }, (_, i) => [lat + dLat * Math.sin((i * Math.PI) / 4), lng + dLng * Math.cos((i * Math.PI) / 4)] as [number, number])]
+}
+
+/** Hinweiskarte Starkregengefahren (BKG, dl-de/by-2.0): höchste Überflutungstiefe am Gebäude bzw. im Umkreis von etwa 15 m */
+export async function fetchHeavyRain(lat: number, lng: number, state: string | null): Promise<HeavyRain | null> {
+  const prefix = state ? STARKREGEN_PREFIX[state] : undefined
+  if (!prefix) return null
+  const pts = ring15(lat, lng)
+  const scenario = async (kind: 'agw' | 'extrem') => {
+    const vals = await Promise.all(
+      pts.map(([a, b]) => featureInfo('bkg_starkregen', STARKREGEN, `${prefix}_tiefe_${kind}`, a, b, 'text/plain').then((t) => parseStarkregen(t, prefix)).catch(() => null)),
+    )
+    const ok = vals.filter((v): v is number => v !== null)
+    return ok.length ? Math.max(...ok) : null
+  }
+  const [rare, extreme] = await Promise.all([scenario('agw'), scenario('extrem')])
+  if (rare === null && extreme === null) return null
+  return {
+    rareCm: rare,
+    extremeCm: extreme,
+    note: 'Höchste simulierte Wassertiefe am Gebäude bzw. im Umkreis von etwa 15 m. Simulation ohne Kanalnetz und Versickerung, Raster 1 m; unter 10 cm gilt als nicht betroffen. Hinweiskarte, keine parzellenscharfe Gefahrenkarte.',
+  }
 }
 
 /** Aquaprotect (BAFU): grobe Überschwemmungsgebiete der ganzen Schweiz für 50, 100 und 500 Jahre */
@@ -147,14 +205,15 @@ async function fetchFloodAt(lat: number, lng: number): Promise<FloodResult> {
   }
 }
 
-export async function fetchFlood(lat: number, lng: number, country: string | null): Promise<FloodResult> {
+export async function fetchFlood(lat: number, lng: number, country: string | null, state: string | null = null): Promise<FloodResult> {
   const now = new Date().toISOString()
   const empty = { haeufig: false, hq100: false, extrem: false }
   if (country === 'CH') return fetchFloodCh(lat, lng)
   if (country === 'AT') return fetchFloodAt(lat, lng)
   if (country && country !== 'DE')
     return { covered: false, inArea: empty, reportYear: null, fetchedAt: now, note: 'Für dieses Land ist keine freie Hochwasserquelle angebunden.' }
-  return cached(`flood2:${lat.toFixed(5)},${lng.toFixed(5)}`, 30 * 24 * 3600 * 1000, async () => {
+  return cached(`flood4:${lat.toFixed(5)},${lng.toFixed(5)}`, 30 * 24 * 3600 * 1000, async () => {
+    const heavyRainJob = fetchHeavyRain(lat, lng, state)
     const inArea = { ...empty }
     let year: string | null = null
     for (const s of ['haeufig', 'hq100', 'extrem'] as FloodScenario[]) {
@@ -169,6 +228,7 @@ export async function fetchFlood(lat: number, lng: number, country: string | nul
       covered: true,
       inArea,
       sourceId: 'bfg_flood',
+      heavyRain: await heavyRainJob,
       reportYear: year,
       fetchedAt: now,
       note: 'Hochwassergefahrenflächen an Gewässern mit signifikantem Risiko (EU-Hochwasserrichtlinie, 2. Zyklus), geprüft im Umkreis von etwa 25 m. Kleine Bäche und Starkregen sind darin nicht enthalten.',

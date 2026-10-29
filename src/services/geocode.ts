@@ -60,7 +60,7 @@ function toResult(f: PhotonFeature): GeoResult | null {
     city: p.city ?? (p.type === 'city' ? (p.name ?? null) : null),
     street: p.street ?? null,
     postcode: p.postcode ?? null,
-    state: p.state ?? null,
+    state: normalizeState(p.state ?? null, p.city ?? null),
     precision: precisionOf(p),
   }
 }
@@ -90,4 +90,14 @@ export async function reverseGeocode(lat: number, lng: number): Promise<GeoResul
   if (!f) return null
   const r = toResult(f)
   return r ? { ...r, lat, lng } : null
+}
+
+/**
+ * Amtliche Ländernamen vereinheitlichen, damit die Quellen je Land greifen:
+ * „Freie Hansestadt Bremen“ → „Bremen“, „Freistaat Bayern“ → „Bayern“; Stadtstaaten ohne Land → Stadt.
+ */
+export function normalizeState(state: string | null, city: string | null = null): string | null {
+  const s = state?.replace(/^(Freie und Hansestadt|Freie Hansestadt|Freistaat|Land)\s+/, '').trim() || null
+  if (!s && city && ['Berlin', 'Hamburg', 'Bremen'].includes(city)) return city
+  return s
 }

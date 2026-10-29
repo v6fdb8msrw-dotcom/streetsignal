@@ -34,7 +34,7 @@ const n = (note: string): CoverageCell => ({ level: 'gibt es nicht', note })
 // Für ganz Deutschland gleich
 const DE_BASE = {
   laerm: d('EU-Lärmkartierung (EEA): Ballungsräume und Hauptverkehrswege'),
-  hochwasser: d('BfG-Gefahrenflächen HQ häufig, HQ100, HQ extrem'),
+  hochwasser: d('BfG-Gefahrenflächen HQ häufig, HQ100, HQ extrem; Starkregen-Wassertiefe (BKG) außer in Bayern und Baden-Württemberg'),
   luft: d('Jahresmittel der nächsten UBA-Messstationen'),
   oepnv: d('Abfahrten aller Linien laut Sollfahrplan (gtfs.de)'),
 }
@@ -59,23 +59,23 @@ function at(region: string, planung: CoverageCell, extra: Partial<Record<Coverag
 /** Zellen, die für ein ganzes Land gleich sind: in der Tabelle ohne Wiederholung des Texts */
 export const COMMON_CELLS = new Set<CoverageCell>([...Object.values(DE_BASE), ...Object.values(AT_BASE)])
 export const COUNTRY_NOTE: Record<'DE' | 'AT' | 'CH', string> = {
-  DE: `Überall: ${DE_BASE.laerm.note}; ${DE_BASE.hochwasser.note}; ${DE_BASE.luft.note}; ${DE_BASE.oepnv.note}.`,
+  DE: `Überall: Umgebung aus OpenStreetMap (Schulen, Kitas, Ärzte, Einkauf, Haltestellen, Grün, Wasser); ${DE_BASE.laerm.note}; ${DE_BASE.hochwasser.note}; ${DE_BASE.luft.note}; ${DE_BASE.oepnv.note}. Geprüft mit einer Adresse je Bundesland am 29.10.2026.`,
   AT: `Überall: ${AT_BASE.laerm.note}; ${AT_BASE.hochwasser.note}; ${AT_BASE.luft.note}. Nahverkehr: ${AT_BASE.oepnv.note}. ${AT_BASE.bodenwert.note}.`,
   CH: 'Bundesdaten von geo.admin.ch gelten für alle Kantone gleich.',
 }
 
 export const COVERAGE: CoverageRegion[] = [
-  de('Baden-Württemberg', t('Landesweiter INSPIRE-Dienst (dl-de/by), soweit Kommunen liefern'), l('BORIS-BW nur nicht kommerziell')),
-  de('Bayern', l('BayernAtlas nur zur Ansicht'), l('BORIS Bayern nur Ansicht im Portal')),
+  de('Baden-Württemberg', d('Flächennutzungsplan landesweit, Bebauungspläne soweit Kommunen liefern (dl-de/by)'), l('BORIS-BW nur nicht kommerziell'), { hochwasser: t('BfG-Gefahrenflächen am Punkt; Starkregenkarten gibt es nur je Kommune, nicht landesweit offen') }),
+  de('Bayern', l('Direkter Link zur Bauleitplanung der Gemeinde (Landesportal, CC BY 4.0); Planinhalte nur unter CC BY-ND'), l('BORIS Bayern nur Ansicht im Portal'), { hochwasser: t('BfG-Gefahrenflächen am Punkt; Starkregen nur als Kartenebene (LfU: Senken und Fließwege)') }),
   de('Berlin', d('Bebauungspläne festgesetzt und im Verfahren (dl-de/zero)'), d('BRW 2025 (dl-de/zero)'), { laerm: d('EU-Kartierung plus Berliner Lärmkarte 2022 als Ebene') }),
   de('Brandenburg', NO_BPLAN, d('BORIS-BB 2026 (dl-de/by)')),
-  de('Bremen', NO_BPLAN, l('Bodenrichtwerte nur gegen Gebühr')),
-  de('Hamburg', d('Bebauungspläne festgestellt und im Verfahren (dl-de/by)'), t('Nur Kartenebene; der Dienst liefert am Punkt keinen Wert')),
+  de('Bremen', NO_BPLAN, l('Stadt Bremen: CC BY 4.0, aber kein öffentlicher Dienst; Bremerhaven gebührenpflichtig')),
+  de('Hamburg', d('Bebauungspläne festgestellt und im Verfahren (dl-de/by)'), d('Normierte Bodenrichtwerte je Baublock als Spanne (dl-de/by)')),
   de('Hessen', l('Bebauungspläne nur als PDF je Gemeinde'), d('BORIS Hessen (dl-de/zero)')),
   de('Mecklenburg-Vorpommern', NO_BPLAN, d('BORIS M-V (CC BY 4.0)')),
   de('Niedersachsen', NO_BPLAN, d('BORIS-NI 2026, Bauland (dl-de/by)')),
   de('Nordrhein-Westfalen', t('Landesweiter INSPIRE-Dienst, soweit Kommunen liefern'), d('BORIS.NRW (dl-de/zero)'), { laerm: d('EU-Kartierung plus Umgebungslärm NRW als Ebene') }),
-  de('Rheinland-Pfalz', NO_BPLAN, l('Lizenz offen, aber keine veröffentlichte Dienstadresse')),
+  de('Rheinland-Pfalz', NO_BPLAN, l('Zonale Werte nur mit Zugangsbeschränkung')),
   de('Saarland', NO_BPLAN, l('Nur Ansicht im Portal')),
   de('Sachsen', NO_BPLAN, d('BORIS.SACHSEN 2026 (dl-de/by)')),
   de('Sachsen-Anhalt', NO_BPLAN, d('BORIS ST 2026, Bauland (dl-de/by)')),

@@ -4,7 +4,7 @@ import { cached } from '../store/db.ts'
 import { fetchJson } from './http.ts'
 import { featureInfo } from './wms.ts'
 
-export type PlanStatus = 'festgesetzt' | 'im Verfahren' | 'außer Kraft' | 'unbekannt' | 'Flächenwidmung' | 'Bauzone'
+export type PlanStatus = 'festgesetzt' | 'im Verfahren' | 'außer Kraft' | 'unbekannt' | 'Flächenwidmung' | 'Bauzone' | 'Flächennutzungsplan'
 
 export interface Plan {
   name: string
@@ -21,6 +21,8 @@ export interface PlanningResult {
   region: string | null
   plans: Plan[]
   portal: { label: string; url: string } | null
+  /** Weitere amtliche Links (z. B. laufende Verfahren der Gemeinde) */
+  extraLinks?: { label: string; url: string }[]
   fetchedAt: string
 }
 
@@ -248,12 +250,49 @@ export function parseBwBplan(text: string): Plan[] {
   })
 }
 
+/** Bayern: Links der Gemeinde aus dem zentralen Landesportal Bauleitplanung (CC BY 4.0) */
+export function parseBayernPortal(text: string): { name: string | null; links: { label: string; url: string }[] } {
+  const f = (k: string) => text.match(new RegExp(`\\n\\s*${k} = '([^']*)'`))?.[1]?.trim() || null
+  const name = f('name')
+  const links: { label: string; url: string }[] = []
+  const blp = f('blp_seite') ?? f('ags_seite')
+  if (blp) links.push({ label: `Bauleitplanung ${name ?? 'der Gemeinde'}`, url: blp })
+  const lfd = f('lfd_seite')
+  if (lfd && lfd !== blp) links.push({ label: 'Laufende Verfahren', url: lfd })
+  return { name, links: links.filter((l) => /^https?:\/\//.test(l.url)) }
+}
+
+/** Baden-Württemberg: Flächennutzungspläne landesweit (Raumordnungskataster AROK), MapServer-Text */
+export function parseBwFnp(text: string): Plan[] {
+  return text.split(/\n(?=fnp\d:)/).filter((b) => /^fnp\d:/.test(b.trim())).map((b) => {
+    const f = (k: string) => b.match(new RegExp(`\\n\\s*${k}: ([^\\n]*)`))?.[1]?.trim() || null
+    const status = f('status_t')
+    return {
+      name: f('oa_nr_t') ?? 'Darstellung im Flächennutzungsplan',
+      status: 'Flächennutzungsplan' as PlanStatus,
+      date: f('inkraft') ? `wirksam seit ${f('inkraft')}` : null,
+      documentUrl: null,
+      explanationUrl: null,
+      sourceId: 'bw_fnp',
+      detail: [f('bezeich'), f('ars_t'), status && status !== 'Rechtsbestand' ? status : null].filter(Boolean).join(' · ') || null,
+    }
+  })
+}
+
 /** Zuständige Portale, wenn kein Dienst angebunden ist */
 const PORTALS: Record<string, { label: string; url: string }> = {
   Hessen: { label: 'Geoportal Hessen (Bauleitpläne der Kommunen)', url: 'https://www.geoportal.hessen.de' },
   Bayern: { label: 'BayernAtlas Bauleitplanung', url: 'https://geoportal.bayern.de/bayernatlas' },
   Niedersachsen: { label: 'Geodatenportal Niedersachsen', url: 'https://www.geodaten.niedersachsen.de' },
   Sachsen: { label: 'Geoportal Sachsen', url: 'https://geoportal.sachsen.de' },
+  Brandenburg: { label: 'Geoportal Brandenburg (Bauleitpläne der Kommunen)', url: 'https://geoportal.brandenburg.de' },
+  Bremen: { label: 'Bauleitpläne Bremen', url: 'https://www.bauleitplan.bremen.de' },
+  'Mecklenburg-Vorpommern': { label: 'Geoportal Mecklenburg-Vorpommern', url: 'https://www.geoportal-mv.de' },
+  'Rheinland-Pfalz': { label: 'Geoportal Rheinland-Pfalz', url: 'https://www.geoportal.rlp.de' },
+  Saarland: { label: 'Geoportal Saarland', url: 'https://geoportal.saarland.de' },
+  'Schleswig-Holstein': { label: 'Digitaler Atlas Nord (Schleswig-Holstein)', url: 'https://danord.gdi-sh.de' },
+  'Sachsen-Anhalt': { label: 'Geodatenportal Sachsen-Anhalt', url: 'https://www.geodatenportal.sachsen-anhalt.de' },
+  Thüringen: { label: 'Geoportal Thüringen', url: 'https://www.geoportal-th.de' },
   Oberösterreich: { label: 'DORIS Flächenwidmung (als Kartenebene zuschaltbar)', url: 'https://www.doris.at' },
   Salzburg: { label: 'SAGIS Salzburg (Flächenwidmung; offene Daten nur als Download, Einbau geplant)', url: 'https://www.salzburg.gv.at/sagis' },
   Niederösterreich: { label: 'NÖ Atlas (Flächenwidmung nicht als offene Daten veröffentlicht)', url: 'https://atlas.noe.gv.at' },
@@ -261,7 +300,7 @@ const PORTALS: Record<string, { label: string; url: string }> = {
 }
 
 export async function fetchPlanning(lat: number, lng: number, state: string | null, country: string | null = 'DE'): Promise<PlanningResult> {
-  const key = `plan:${lat.toFixed(5)},${lng.toFixed(5)}`
+  const key = `plan2:${lat.toFixed(5)},${lng.toFixed(5)}`
   const now = new Date().toISOString()
   if (country === 'CH') {
     return cached(key, 7 * 24 * 3600 * 1000, async () => {
@@ -312,8 +351,25 @@ export async function fetchPlanning(lat: number, lng: number, state: string | nu
   }
   if (state === 'Baden-Württemberg') {
     return cached(key, 7 * 24 * 3600 * 1000, async () => {
-      const text = await featureInfo('bw_bplan', 'https://www.geoportal-raumordnung-bw.de/ows/services/org.1.a12db7e6-88fc-4652-b350-3c25496ebc7a_wms', 'LU.SpatialPlan', lat, lng, 'text/plain')
-      return { covered: true, region: 'Baden-Württemberg', plans: parseBwBplan(text), portal: { label: 'Geoportal Raumordnung BW', url: 'https://www.geoportal-raumordnung-bw.de' }, fetchedAt: now }
+      const [bplan, fnp] = await Promise.all([
+        featureInfo('bw_bplan', 'https://www.geoportal-raumordnung-bw.de/ows/services/org.1.a12db7e6-88fc-4652-b350-3c25496ebc7a_wms', 'LU.SpatialPlan', lat, lng, 'text/plain'),
+        featureInfo('bw_fnp', 'https://www.geoportal-raumordnung-bw.de/ows/services/org.1.893a6cec-c94d-46bc-8b73-f46e29232f43_wms', 'fnp0,fnp2', lat, lng, 'text/plain').catch(() => ''),
+      ])
+      return { covered: true, region: 'Baden-Württemberg', plans: [...parseBwBplan(bplan), ...parseBwFnp(fnp)], portal: { label: 'Geoportal Raumordnung BW', url: 'https://www.geoportal-raumordnung-bw.de' }, fetchedAt: now }
+    })
+  }
+  if (state === 'Bayern') {
+    return cached(key, 7 * 24 * 3600 * 1000, async () => {
+      const text = await featureInfo('by_blp_portal', 'https://geoservices.bayern.de/od/wms/gdi/v1/bauleitplanungsportal', 'zentrales_Landesportal_teilnehmende_Gemeinden', lat, lng, 'text/plain')
+      const { links } = parseBayernPortal(text)
+      return {
+        covered: false,
+        region: 'Bayern',
+        plans: [],
+        portal: links[0] ?? PORTALS.Bayern,
+        extraLinks: links.slice(1),
+        fetchedAt: now,
+      }
     })
   }
   if (state === 'Hamburg') {

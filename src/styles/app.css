@@ -268,7 +268,7 @@ td.lvl-0 { color: var(--text-3); }
 .flood li.out b { color: var(--text-3); font-weight: 600; }
 table.air td small { display: block; color: var(--text-3); font-weight: 500; font-size: 11px; }
 table.air td:not(:first-child) { text-align: center; font-family: var(--font-display); font-weight: 600; }
-.badge.st-Flächenwidmung, .badge.st-Bauzone { background: #e8eef7; color: #2d4f7c; }
+.badge.st-Flächenwidmung, .badge.st-Bauzone, .badge.st-Flächennutzungsplan { background: #e8eef7; color: #2d4f7c; }
 .cats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .cats li { display: grid; grid-template-columns: 12px 1fr auto; grid-template-areas: 'd n c' '. f f'; column-gap: 8px; }
 .cats .dot { grid-area: d; width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; }

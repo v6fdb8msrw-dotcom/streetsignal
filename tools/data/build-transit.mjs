@@ -1,6 +1,6 @@
 // Bereitet die GTFS-Fahrpläne von gtfs.de (Daten DELFI e.V., CC BY 4.0) zu Abfahrten je Haltestelle auf.
 // Ergebnis: public/data/oepnv/<Kachel>.json mit [lat, lng, Name, Abfahrten am Stichtag, Verkehrsmittel].
-// Aufruf: node tools/data/build-transit.mjs <Ordner mit de_fv.zip, de_rv.zip, de_nv.zip, optional at_wl.zip>
+// Aufruf: node tools/data/build-transit.mjs <Ordner mit de_fv.zip, de_rv.zip, de_nv.zip, optional at_wl.zip, ch.zip>
 // Braucht das Programm „unzip“. Stichtag: der nächste Mittwoch, an dem alle Feeds gültig sind.
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -15,6 +15,8 @@ const FEEDS = [
   { file: 'de_nv.zip', defaultMode: 'B' },
   // Österreich: frei ohne Anmeldung nur die Wiener Linien (CC BY 4.0, data.wien.gv.at)
   { file: 'at_wl.zip', defaultMode: 'B' },
+  // Schweiz: Gesamtfahrplan von opentransportdata.swiss (kommerziell erlaubt, Quellenangabe Pflicht)
+  { file: 'ch.zip', defaultMode: 'R' },
 ]
 const TILE = 0.25
 const OUT = 'public/data/oepnv'
@@ -151,6 +153,6 @@ const isoDate = `${DATE.slice(0, 4)}-${DATE.slice(4, 6)}-${DATE.slice(6)}`
 for (const [key, list] of tiles) writeFileSync(join(OUT, `${key}.json`), JSON.stringify({ date: isoDate, feeds: included, stops: list }))
 writeFileSync(
   join(OUT, 'LIZENZ.txt'),
-  `Fahrplandaten: gtfs.de, Daten von DELFI e.V., Creative Commons Namensnennung 4.0 (https://creativecommons.org/licenses/by/4.0/).\nDie Feeds enthalten laut attributions.txt auch Daten von OpenStreetMap-Mitwirkenden (ODbL 1.0, https://opendatacommons.org/licenses/odbl/); soweit diese enthalten sind, gilt für die abgeleiteten Daten die ODbL.\nWiener Linien (at_wl): Stadt Wien – data.wien.gv.at, Creative Commons Namensnennung 4.0.\nAufbereitet von StreetSignal: Abfahrten je Haltestelle am ${isoDate} (Sollfahrplan). Ohne Gewähr.\n`,
+  `Fahrplandaten: gtfs.de, Daten von DELFI e.V., Creative Commons Namensnennung 4.0 (https://creativecommons.org/licenses/by/4.0/).\nDie Feeds enthalten laut attributions.txt auch Daten von OpenStreetMap-Mitwirkenden (ODbL 1.0, https://opendatacommons.org/licenses/odbl/); soweit diese enthalten sind, gilt für die abgeleiteten Daten die ODbL.\nWiener Linien (at_wl): Stadt Wien – data.wien.gv.at, Creative Commons Namensnennung 4.0.\nSchweiz (ch): Fahrplan opentransportdata.swiss (Geschäftsstelle SKI), Nutzungsbedingungen opendata.swiss: kommerziell erlaubt, Quellenangabe.\nAufbereitet von StreetSignal: Abfahrten je Haltestelle am ${isoDate} (Sollfahrplan). Ohne Gewähr.\n`,
 )
 console.log(`\n${stations.size} Stationen in ${tiles.size} Kacheln → ${OUT}`)

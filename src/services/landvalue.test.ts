@@ -50,3 +50,14 @@ describe('Bodenrichtwerte der Länder', () => {
     expect(v.buildingLand).toBe(true)
   })
 })
+
+describe('Bodenrichtwerte Hamburg', () => {
+  it('liest die normierte Spanne je Baublock', async () => {
+    const { parseHamburgUek, formatLandValue } = await import('./landvalue.ts')
+    const [v] = parseHamburgUek('<wfs:FeatureCollection><wfs:member><app:lgv_brw_uek_mfh><app:nutzung>Mehrfamilienhäuser</app:nutzung><app:baublock>306001</app:baublock><app:minimaler_normierter_brw>1450</app:minimaler_normierter_brw><app:maximaler_normierter_brw>2200</app:maximaler_normierter_brw><app:stichtag>01.01.2026</app:stichtag></app:lgv_brw_uek_mfh></wfs:member></wfs:FeatureCollection>')
+    expect(v.valueEurPerSqm).toBe(1450)
+    expect(v.maxEurPerSqm).toBe(2200)
+    expect(v.referenceDate).toBe('2026-01-01')
+    expect(formatLandValue(v)).toBe('1.450–2.200 €/m²')
+  })
+})

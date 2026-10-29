@@ -6,7 +6,7 @@ import { reverseGeocode, type GeoResult } from './geocode.ts'
 import { fetchFlood, FLOOD_LABEL, type FloodResult, type FloodScenario } from './hazards.ts'
 import { fetchTransit, type TransitResult } from './transit.ts'
 import { SourceError } from './http.ts'
-import { fetchLandValue, type LandValueResult } from './landvalue.ts'
+import { fetchLandValue, formatLandValue, type LandValueResult } from './landvalue.ts'
 import { fetchNoise, formatRange, loudest, NOISE_SOURCE_LABEL, type NoiseResult } from './noise.ts'
 import { fetchCouncil, type CouncilResult } from './oparl.ts'
 import { fetchPois, POI_CATEGORIES, type Poi, type PoiCategory, type PoiResult } from './overpass.ts'
@@ -23,7 +23,7 @@ export interface Section<T> {
 }
 
 /** Bei jeder neuen Quelle erhöhen: ältere gespeicherte Berichte werden dann automatisch neu abgefragt */
-export const REPORT_VERSION = 5
+export const REPORT_VERSION = 6
 
 export interface EnvReport {
   id: string
@@ -71,7 +71,7 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
     lng,
     radius,
     place: null,
-    pois: pending(['overpass']),
+    pois: pending(['openfreemap']),
     noise: pending(['eea_noise']),
     planning: pending(['hh_bplan', 'be_bplan']),
     landValue: pending(['boris_d']),
@@ -97,7 +97,7 @@ export async function analyze(targetId: string, lat: number, lng: number, radius
     run('planning', () => fetchPlanning(lat, lng, place?.state ?? null, place?.country ?? null)),
     run('landValue', () => fetchLandValue(lat, lng, place?.country ?? null, place?.state ?? null)),
     run('council', () => fetchCouncil(place?.city ?? null, place?.street ?? null)),
-    run('flood', () => fetchFlood(lat, lng, place?.country ?? null)),
+    run('flood', () => fetchFlood(lat, lng, place?.country ?? null, place?.state ?? null)),
     run('air', () => fetchAir(lat, lng, place?.country ?? null)),
     run('transit', () => fetchTransit(lat, lng, place?.country ?? null)),
   ])
@@ -168,7 +168,12 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
     const fl = r.flood.data
     const src = fl.sourceId === 'ch_flood' ? 'BAFU Aquaprotect' : fl.sourceId === 'at_flood' ? 'BMLUK/Umweltbundesamt' : 'BfG'
     if (hit.length) facts.push(`Liegt in einer Hochwassergefahrenfläche, Szenario: ${fl.labels?.[hit[0]] ?? FLOOD_LABEL[hit[0]]} (${src}).`)
-    else facts.push(`Liegt in keiner kartierten Hochwassergefahrenfläche, auch nicht im seltensten Szenario (${src}). Starkregen ist darin nicht enthalten.`)
+    else facts.push(`Liegt in keiner kartierten Hochwassergefahrenfläche, auch nicht im seltensten Szenario (${src}).`)
+    const hr = fl.heavyRain
+    if (hr) {
+      const cm = (v: number | null) => (v === null ? 'keine Angabe' : v >= 10 ? `bis ${Math.round(v)} cm` : 'unter 10 cm')
+      facts.push(`Starkregen-Simulation am Punkt: außergewöhnlich ${cm(hr.rareCm)}, extrem ${cm(hr.extremeCm)} Wasser (BKG).`)
+    } else if (r.place?.country === 'DE' || !r.place?.country) hints.push('Für Starkregen gibt es an diesem Ort keine bundesweite Hinweiskarte (Bayern und Baden-Württemberg fehlen darin).')
   }
 
   if (r.air?.data?.model) {
@@ -183,6 +188,8 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
 
   if (r.planning.data?.covered) {
     const zoning = r.planning.data.plans.filter((p) => p.status === 'Flächenwidmung' || p.status === 'Bauzone')
+    const fnp = r.planning.data.plans.find((p) => p.status === 'Flächennutzungsplan')
+    if (fnp) facts.push(`Flächennutzungsplan am Punkt: ${fnp.name} (${r.planning.data.region}).`)
     if (zoning.length) facts.push(`${zoning[0].status} am Punkt: ${zoning[0].name} (${r.planning.data.region}).`)
     else {
       const inProc = r.planning.data.plans.filter((p) => p.status === 'im Verfahren').length
@@ -195,7 +202,7 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
   if (r.landValue.data?.values.length) {
     const v = r.landValue.data.values[0]
     const stichtag = v.referenceDate ? new Date(v.referenceDate).toLocaleDateString('de-DE') : 'k. A.'
-    facts.push(`Bodenrichtwert: ${v.valueEurPerSqm.toLocaleString('de-DE')} €/m² (${v.usage ?? 'Nutzung k. A.'}, Stichtag ${stichtag}, ${r.landValue.data.portal?.label ?? 'Gutachterausschuss'}).`)
+    facts.push(`Bodenrichtwert: ${formatLandValue(v)} (${v.usage ?? 'Nutzung k. A.'}, Stichtag ${stichtag}, ${r.landValue.data.portal?.label ?? 'Gutachterausschuss'}).`)
     hints.push('Der Bodenrichtwert ist ein Zonen-Durchschnitt, kein Verkehrswert.')
   } else if (r.landValue.data) gaps.push(r.landValue.data.note)
 

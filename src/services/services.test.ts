@@ -169,3 +169,58 @@ describe('Bebauungspläne landesweit', () => {
     expect(p.documentUrl).toBeNull()
   })
 })
+
+describe('Flächennutzungsplan BW und Bayern-Portal', () => {
+  it('BW FNP', async () => {
+    const { parseBwFnp } = await import('./planning.ts')
+    const [p] = parseBwFnp(`fnp0:
+  aktennr: 21-2511.3-11/79
+  status_t: Rechtsbestand
+  ars_t: Karlsruhe
+  bezeich: FNP NV Karlsruhe
+  inkraft: 2021-07-03
+  oa_nr_t: gemischte Baufläche (M) Bestand
+  geometrie: MULTIPOLYGON (((1 2,3 4,1 2)))
+`)
+    expect(p.name).toBe('gemischte Baufläche (M) Bestand')
+    expect(p.status).toBe('Flächennutzungsplan')
+    expect(p.date).toBe('wirksam seit 2021-07-03')
+    expect(p.detail).toBe('FNP NV Karlsruhe · Karlsruhe')
+  })
+  it('Bayern Landesportal', async () => {
+    const { parseBayernPortal } = await import('./planning.ts')
+    const r = parseBayernPortal(`GetFeatureInfo results:
+
+Layer 'zentrales_Landesportal_teilnehmende_Gemeinden'
+  Feature 61: 
+    name = 'München'
+    blp_seite = 'https://stadt.muenchen.de/infos/bauleitplanung-muenchen.html'
+    lfd_seite = 'https://stadt.muenchen.de/infos/auslegung-termine.html'
+    ags_seite = ''
+`)
+    expect(r.name).toBe('München')
+    expect(r.links.map((l) => l.label)).toEqual(['Bauleitplanung München', 'Laufende Verfahren'])
+  })
+})
+
+describe('Starkregen BKG', () => {
+  it('nimmt nur die Ebene des eigenen Landes und ignoriert -9999', async () => {
+    const { parseStarkregen } = await import('./hazards.ts')
+    const text = "Results for FeatureType 'http://bkg.bund.de/starkregen:bb_tiefe_agw':\n----\nTiefe = 0.0\n----\nResults for FeatureType 'http://bkg.bund.de/starkregen:be_tiefe_agw':\n----\nTiefe = 11.0\n----\n"
+    expect(parseStarkregen(text, 'be')).toBe(11)
+    expect(parseStarkregen(text, 'bb')).toBe(0)
+    expect(parseStarkregen(text, 'he')).toBeNull()
+    expect(parseStarkregen("Results for FeatureType 'x:he_tiefe_agw':\nTiefe = -9999.0\n", 'he')).toBeNull()
+  })
+})
+
+describe('Ländernamen', () => {
+  it('vereinheitlicht amtliche Namen', async () => {
+    const { normalizeState } = await import('./geocode.ts')
+    expect(normalizeState('Freie Hansestadt Bremen')).toBe('Bremen')
+    expect(normalizeState('Freie und Hansestadt Hamburg')).toBe('Hamburg')
+    expect(normalizeState('Freistaat Bayern')).toBe('Bayern')
+    expect(normalizeState(null, 'Berlin')).toBe('Berlin')
+    expect(normalizeState('Hessen')).toBe('Hessen')
+  })
+})

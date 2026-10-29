@@ -89,15 +89,19 @@ export async function fetchTransit(lat: number, lng: number, country: string | n
       `https://api3.geo.admin.ch/rest/services/api/MapServer/identify?geometryType=esriGeometryPoint&geometry=${lng},${lat}&sr=4326&layers=all:ch.are.gueteklassen_oev&tolerance=0&mapExtent=${lng - d},${lat - d},${lng + d},${lat + d}&imageDisplay=600,600,96&returnGeometry=false&lang=de`,
     )
     const cls = res.results[0]?.attributes.klasse_de ?? null
+    // Abfahrten aus dem Schweizer Gesamtfahrplan, sofern aufbereitet
+    const near = await gtfsStops(lat, lng, 1000)
+    const far = await gtfsStops(lat, lng, 25000)
+    const hasCh = (near.feeds.length ? near.feeds : far.feeds).includes('ch') && near.stops.length > 0
     return {
       covered: true,
       source: 'oev_gueteklasse',
       ovClass: cls,
       partial: false,
-      stops: [],
-      departures500: null,
-      nearestLongDistance: null,
-      dataDate: null,
+      stops: hasCh ? near.stops.slice(0, 8) : [],
+      departures500: hasCh ? near.stops.filter((s) => s.distanceM <= 500).reduce((a, s) => a + s.departures, 0) : null,
+      nearestLongDistance: hasCh ? (far.stops.find((s) => s.modes.includes('F')) ?? null) : null,
+      dataDate: hasCh ? near.date : null,
       note: cls ? 'ÖV-Güteklassen A (sehr gut) bis D (gering) bewerten Takt und Art der Haltestellen in der Umgebung.' : 'Keine ÖV-Güteklasse: Der Ort liegt außerhalb der erschlossenen Gebiete.',
     }
   }

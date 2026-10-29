@@ -1,7 +1,9 @@
-// Umgebung aus OpenStreetMap (Overpass API). Eine Abfrage je Analyse, Ergebnis wird zwischengespeichert.
+// Umgebung aus OpenStreetMap. Standard: Vektorkacheln von OpenFreeMap (osmTiles.ts), Ausweich: Overpass API.
+// Ergebnis wird zwischengespeichert.
 import { distanceM } from '../model/geo.ts'
 import { cached } from '../store/db.ts'
 import { fetchJson, SourceError } from './http.ts'
+import { fetchPoisFromTiles } from './osmTiles.ts'
 
 export type PoiCategory =
   | 'gruen'
@@ -54,6 +56,8 @@ export interface PoiResult {
   /** Zeitstempel der OSM-Daten laut Server */
   dataTimestamp: string | null
   fetchedAt: string
+  /** Woher die Daten kamen: OpenFreeMap-Kacheln (Standard) oder Overpass (Ausweich) */
+  source?: 'openfreemap' | 'overpass'
 }
 
 interface OverpassElement {
@@ -108,6 +112,17 @@ export async function overpass<T>(query: string): Promise<T> {
 }
 
 export async function fetchPois(lat: number, lng: number, radiusM: number): Promise<PoiResult> {
+  return cached(`pois2:${lat.toFixed(4)},${lng.toFixed(4)},${radiusM}`, 6 * 3600 * 1000, async () => {
+    try {
+      return await fetchPoisFromTiles(lat, lng, radiusM)
+    } catch {
+      // Kacheln nicht erreichbar: Overpass versuchen
+      return fetchPoisOverpass(lat, lng, radiusM)
+    }
+  })
+}
+
+export async function fetchPoisOverpass(lat: number, lng: number, radiusM: number): Promise<PoiResult> {
   const query = buildQuery(lat, lng, radiusM)
   const key = `overpass:${lat.toFixed(4)},${lng.toFixed(4)},${radiusM}`
   return cached(key, 6 * 3600 * 1000, async () => {
@@ -131,6 +146,6 @@ export async function fetchPois(lat: number, lng: number, radiusM: number): Prom
       })
     }
     pois.sort((a, b) => a.distanceM - b.distanceM)
-    return { pois, dataTimestamp: data.osm3s?.timestamp_osm_base ?? null, fetchedAt: new Date().toISOString() }
+    return { pois, dataTimestamp: data.osm3s?.timestamp_osm_base ?? null, fetchedAt: new Date().toISOString(), source: 'overpass' as const }
   })
 }

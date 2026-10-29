@@ -1,14 +1,14 @@
 # Datenquellen
 
-Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schlüssel, Abruf direkt aus dem Browser (CORS) und die Lizenzangabe des Dienstes selbst (WMS-Capabilities bzw. Dienstbeschreibung). Die Liste in der App (`src/sources/registry.ts`) ist dieselbe.
+Stand der Prüfung: 26.10.2026, Erweiterungen 27. bis 29.10.2026. Geprüft wurden Erreichbarkeit, Abruf ohne Schlüssel, Abruf direkt aus dem Browser (CORS) und die Lizenzangabe des Dienstes selbst (WMS-Capabilities bzw. Dienstbeschreibung). Die Liste in der App (`src/sources/registry.ts`) ist dieselbe.
 
 ## Umgebung und Planung
 
 | Quelle | Art | Kostenlos | Registrierung | Berechtigung | Zugriff | Übernommene Felder | Lizenz und Pflichtvermerk | Einschränkungen |
 |---|---|---|---|---|---|---|---|---|
-| OpenFreeMap (Positron) | Kartenkacheln | ja | nein | – | Vektorkacheln | Kartenbild | ODbL (Daten), „© OpenFreeMap, © OpenStreetMap-Mitwirkende“ | ohne Garantie |
+| OpenFreeMap (Karte und Umgebung) | Kartenkacheln und Umgebungsdaten | ja | nein | – | Vektorkacheln über CDN (Zoom 14) | Kartenbild; Schulen, Kitas, Ärzte, Einkauf, Haltestellen, Bahnhöfe, Grün, Wald, Wasser, Straßenbaustellen mit Abstand | ODbL (Daten), „© OpenFreeMap, © OpenStreetMap-Mitwirkende“ | ohne Garantie; Hauptquelle für die Umgebung, weil unabhängig von Overpass |
 | Photon (komoot) | Geocoding | ja | nein | faire Nutzung | JSON | Adresse, Koordinaten, Genauigkeit | ODbL, „© OpenStreetMap-Mitwirkende“ | max. 1 Anfrage/s, Zwischenspeicher |
-| Overpass API (overpass-api.de, Ausweich: overpass.private.coffee) | OSM-Abfrage | ja | nein | für browserbasierte Werkzeuge vorgesehen | Overpass QL | Name, Kategorie, Lage, Abstand | ODbL 1.0, „© OpenStreetMap-Mitwirkende“ | öffentlich, teils überlastet; nur auf Klick |
+| Overpass API (overpass-api.de, Ausweich: overpass.private.coffee) | OSM-Abfrage | ja | nein | für browserbasierte Werkzeuge vorgesehen | Overpass QL | Name, Kategorie, Lage, Abstand | ODbL 1.0, „© OpenStreetMap-Mitwirkende“ | nur noch Ausweichquelle, wenn die Kacheln nicht erreichbar sind; öffentlich, oft überlastet |
 | EEA Lärmkonturen (noiseStoryMap) | Lärm DACH | ja | nein | – | ArcGIS ImageServer (Kachel, Wert am Punkt) | Lärmklasse Straße/Schiene/Flug/Industrie, L_DEN und L_Night | EEA-Weiterverwendung: kostenlos, auch kommerziell, Quellenangabe „European Environment Agency (EEA)“ | Runde 4 (2022); nur kartierte Gebiete |
 | Umgebungslärm NRW | Lärm | ja | nein | – | WMS | Kartenebene | dl-de/by-2-0, Vermerk „Land NRW“ | nur NRW |
 | Strategische Lärmkarten Berlin 2022 | Lärm | ja | nein | – | WMS | Kartenebene | dl-de/zero-2-0 | nur Berlin |
@@ -24,9 +24,10 @@ Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurde
 | BORIS Niedersachsen | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (GML), Ebene Bauland | Wert, Stichtag, Nutzung, Zone, Gutachterausschuss | dl-de/by-2-0 (LGLN Open Data) | nur Bauland |
 | BORIS Sachsen-Anhalt | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (AdV-GML), Ebene Bauland | Wert, Stichtag, Nutzung, Zone | dl-de/by-2-0, „© GeoBasis-DE / LVermGeo ST (Gutachterausschuss für Grundstückswerte in Sachsen-Anhalt)“ | nur Bauland |
 | BORIS Mecklenburg-Vorpommern | Bodenrichtwerte | ja | nein | – | WMS + GetFeatureInfo (Text) | Wert, Stichtag, Nutzung, Ortsteil | CC BY 4.0 laut Dienst-Metadaten (GDI-DE), „© GeoBasis-DE/M-V 2025“; die Capabilities verweisen zusätzlich auf die GutALVO | |
-| Bodenrichtwerte Hamburg | Bodenrichtwerte | ja | nein | – | WMS (nur Kartenebene) | – | dl-de/by-2-0, „Freie und Hansestadt Hamburg, Landesbetrieb Geoinformation und Vermessung“ | Abfrage am Punkt liefert keinen Wert |
+| Bodenrichtwerte Hamburg (normierte Übersicht) | Bodenrichtwerte | ja | nein | – | WFS am Punkt (HH_WFS_UEKnormierteBodenrichtwerte) + WMS | Spanne der normierten Werte je Baublock für EFH, MFH, Geschäfts-, Bürohaus, Stichtag | dl-de/by-2-0, „Freie und Hansestadt Hamburg, Landesbetrieb Geoinformation und Vermessung“ | normiert auf Standardgrundstück, exakter Zonenwert in BORIS.HH |
 | BORIS-D / übrige Landesportale | Bodenrichtwerte | ja | nein | – | nur Link | – | je Land | Bayern und Saarland nur Ansicht im Portal; Baden-Württemberg nur nicht kommerziell; Bremen gebührenpflichtig; Schleswig-Holstein ohne offene Lizenz; Rheinland-Pfalz: Basisdienst laut Katalog dl-de/by, Dienstadresse aber nicht veröffentlicht |
 | Hochwassergefahrenflächen (BfG) | Naturgefahren | ja | nein | – | ArcGIS MapServer (Bild, Abfrage am Punkt) | Betroffenheit häufig/HQ100/extrem, Berichtsjahr | GeoNutzV des Bundes: kostenlos, auch kommerziell, Quellenvermerk | Deutschland; keine kleinen Bäche, kein Starkregen |
+| Hinweiskarte Starkregengefahren (BKG) | Naturgefahren | ja | nein | – | WMS + GetFeatureInfo, Landes-Ebene, Ring von 15 m | höchste simulierte Wassertiefe in cm (außergewöhnlich, extrem) | dl-de/by-2-0 geldleistungsfrei, „© BKG (Jahr) dl-de/by-2-0, Datenquellen: sgx.geodatenzentrum.de/…/datenquellen_hwk_srg.pdf“ | 14 Länder, nicht Bayern und Baden-Württemberg; ohne Kanalnetz und Versickerung |
 | Luftqualität Umweltbundesamt | Umwelt | ja | nein | – | einmalig aufbereitet (keine Browser-Freigabe der API) | Jahresmittel NO₂, PM10, PM2,5 je Station | § 12a EGovG laut UBA-Nutzungsbedingungen: kommerziell und nicht kommerziell, Vermerk „Umweltbundesamt“, Änderungen kennzeichnen | Wert gilt an der Station |
 | Luftmessstationen Österreich (EEA-Jahresstatistik) | Umwelt | ja | nein | – | einmalig aufbereitet aus dem EEA-Dienst AQ_Statistics_WM (`tools/data/build-air-eea.mjs AT 2025`) | Jahresmittel NO₂, PM10, PM2,5 je Station (nur ≥ 75 % Datenabdeckung) | EEA-Weiterverwendung: kostenlos, auch kommerziell, Quellenangabe „European Environment Agency (EEA)“ | 148 Stationen, Wert gilt an der Station |
 | Luftbelastung Schweiz (BAFU-Modell) | Umwelt | ja | nein | – | Kartenbild von wms.geo.admin.ch, Farbe am Punkt der amtlichen Legende zugeordnet | Klasse des Jahresmittels NO₂ (3 µg/m³), PM10 (2), PM2,5 (1) | Freie Geodaten des Bundes (BGDI), Quellenangabe BAFU | Modell; laut BAFU keine Bewertung eines Einzelstandorts |
@@ -42,6 +43,8 @@ Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurde
 | Flächenwidmung Kärnten | Planung | ja | nein | – | INSPIRE-Dienst des Landes (KAGIS) | Widmungsklasse (HILUCS), Widmungscode, Bescheid, gültig seit | CC BY 4.0, Land Kärnten | Klassen nach EU-Schema, nicht im Gesetzeswortlaut |
 | Bebauungspläne NRW (INSPIRE) | Planung | ja | nein | – | WMS + GetFeatureInfo (IT.NRW) | Nummer, Name, Kommune, Rechtsstand, Datum, Plan-Link | laut Dienst keine Nutzungsbedingungen | nur Kommunen, die liefern |
 | Bebauungspläne Baden-Württemberg (INSPIRE) | Planung | ja | nein | – | WMS + GetFeatureInfo (Geoportal Raumordnung BW) | Name, Aktenzeichen, in Kraft seit | dl-de/by-2-0, „© Daten aus dem Geoportal Raumordnung Baden-Württemberg“ | nur Kommunen, die liefern |
+| Flächennutzungspläne Baden-Württemberg (AROK) | Planung | ja | nein | – | WMS + GetFeatureInfo (Geoportal Raumordnung BW) | Darstellung am Punkt, Plan, wirksam seit | dl-de/by-2-0, „© Daten aus dem Geoportal Raumordnung Baden-Württemberg“ | vorbereitender Plan, nicht parzellenscharf |
+| Bauleitplanung Bayern (zentrales Landesportal) | Planung | ja | nein | – | WMS + GetFeatureInfo | Links der Gemeinde zu Bauleitplänen und laufenden Verfahren | CC BY 4.0, „Datenquellen: Bayerische Vermessungsverwaltung – www.geodaten.bayern.de und bayerische Gemeinden“ | keine Planinhalte; die Plan-Umringe Bayerns stehen unter CC BY-ND und werden nicht genutzt |
 | OParl-Verzeichnis + Ratsinformationssysteme | Kommunales | ja | nein | – | OParl JSON | Titel, Datum, Art, Aktenzeichen, Link | je Kommune; nur Metadaten und Link | 127 Systeme, nicht alle erreichbar, nicht verortet |
 | Autobahn GmbH (verkehr.autobahn.de) | Baustellen | technisch ja | nein | **keine Lizenz veröffentlicht** (erneut geprüft 27.10.: weder API-Spezifikation noch Mobilithek) | nur Link zur Baustellenkarte | – | – | wird nicht automatisch abgerufen |
 | Unsplash | Fotos | ja | nein | – | im Projekt gespeichert | 4 Fotos | Unsplash-Lizenz | siehe public/images/CREDITS.md |
@@ -54,6 +57,8 @@ Stand der Prüfung: 26.10.2026, Erweiterungen 27. und 28.10.2026. Geprüft wurde
 | Lärmkarten Österreich (laerminfo.at) | CC BY 4.0, aber nur als Download; die EU-Lärmdaten decken dieselbe Kartierung bereits ab |
 | Bebauungspläne einzelner Gemeinden (z. B. Hessen) | Lizenz je Gemeinde verschieden, teils nur nicht kommerziell; kein landesweiter offener Dienst gefunden; nur verlinkt |
 | Flächenwidmung Salzburg | CC BY 4.0 AT (Land Salzburg), aber nur als Download (165 MB); Einbau als vorab aufbereitete Kacheln geplant |
+| Bodenrichtwerte Bremen | Stadt Bremen laut Katalog CC BY 4.0, aber ohne veröffentlichte Dienstadresse; Bremerhaven gebührenpflichtig |
+| Starkregen Bayern, Baden-Württemberg | nicht in der BKG-Karte; Bayern (LfU) und BW (Kommunen) bisher nicht eingebunden |
 | Flächenwidmung Niederösterreich, Burgenland | nicht als offene Daten veröffentlicht; nur verlinkt |
 | ImmobilienScout24 API | Nutzung nur mit Vertrag nach Freigabe durch ImmoScout24, Suche nur als „Content Partner“, teils vergütungspflichtig, Speicherung höchstens 24 Stunden, keine eigenen Datenbanken; Webseite blockt automatische Abrufe (Roboter-Prüfung). Daher weiterhin nur Link plus Übernahme per Text/PDF/Formular |
 

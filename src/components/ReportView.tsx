@@ -2,6 +2,7 @@ import { AlertCircle, Bot, Building, Droplets, ExternalLink, FileText, Landmark,
 import { useEffect, useState, type ReactNode } from 'react'
 import { diffReports, ruleSummary, summarizePois, type EnvReport } from '../services/environment.ts'
 import { EU_LIMIT } from '../services/air.ts'
+import { formatLandValue } from '../services/landvalue.ts'
 import { FLOOD_LABEL, type FloodScenario } from '../services/hazards.ts'
 import { formatRange, NOISE_PERIOD_LABEL, NOISE_SOURCE_LABEL, type NoisePeriod, type NoiseSource } from '../services/noise.ts'
 import { ollamaStatus, summarizeWithOllama } from '../services/ollama.ts'
@@ -42,7 +43,7 @@ const autobahn = DATA_SOURCES.find((s) => s.id === 'autobahn')!
 const MODES: Record<string, string> = { B: 'Bus', T: 'Tram', U: 'U-Bahn', S: 'S-Bahn', R: 'Regionalbahn', F: 'Fernverkehr', X: 'sonstige' }
 const modeLabel = (m: string) => [...m].map((c) => MODES[c] ?? c).join(', ')
 
-const PLANNING_SOURCE: Record<string, string> = { Hamburg: 'hh_bplan', Berlin: 'be_bplan', Wien: 'wien_fwp', Schweiz: 'ch_bauzonen' }
+const PLANNING_SOURCE: Record<string, string> = { Hamburg: 'hh_bplan', Berlin: 'be_bplan', Wien: 'wien_fwp', Schweiz: 'ch_bauzonen', 'Nordrhein-Westfalen': 'nrw_bplan', 'Baden-Württemberg': 'bw_bplan', Steiermark: 'stmk_fwp', Vorarlberg: 'vbg_fwp', Tirol: 'tirol_fwp', Kärnten: 'ktn_fwp' }
 
 export function ReportView({ report, previous }: { report: EnvReport; previous?: EnvReport | null }) {
   const { facts, hints, gaps } = ruleSummary(report)
@@ -183,7 +184,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
               ))}
             </ul>
             <p className="fine">Luftlinie. Grün, Wasser, Bahnhöfe und Aussichtspunkte werden bis 1,5 km gesucht. Die Vollständigkeit hängt davon ab, was vor Ort in OpenStreetMap eingetragen ist.</p>
-            <SourceLine ids={['overpass']} dataDate={report.pois.data.dataTimestamp ? `OSM-Stand ${dateTime(report.pois.data.dataTimestamp)}` : null} fetchedAt={report.pois.data.fetchedAt} />
+            <SourceLine ids={[report.pois.data.source === 'openfreemap' ? 'openfreemap' : 'overpass']} dataDate={report.pois.data.dataTimestamp ? `OSM-Stand ${report.pois.data.source === 'openfreemap' ? date(report.pois.data.dataTimestamp) : dateTime(report.pois.data.dataTimestamp)}` : null} fetchedAt={report.pois.data.fetchedAt} />
           </>
         ) : (
           (report.pois.status === 'loading' ? <Pending /> : <Failed msg={report.pois.error} />)
@@ -251,8 +252,18 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                   </li>
                 ))}
               </ul>
-              <p className="fine">{report.flood.data.note}</p>
-              <SourceLine ids={[report.flood.data.sourceId ?? 'bfg_flood']} dataDate={report.flood.data.reportYear ? `Berichtsjahr ${report.flood.data.reportYear}` : null} fetchedAt={report.flood.data.fetchedAt} />
+              {report.flood.data.heavyRain && (
+                <ul className="flood">
+                  {([['Starkregen, außergewöhnlich (etwa 100-jährlich)', report.flood.data.heavyRain.rareCm], ['Starkregen, extrem (100 mm in 1 Stunde)', report.flood.data.heavyRain.extremeCm]] as const).map(([label, cm]) => (
+                    <li key={label} className={cm !== null && cm >= 10 ? 'in' : 'out'}>
+                      <span>{label}</span>
+                      <b>{cm === null ? 'keine Angabe' : cm >= 10 ? `bis ${Math.round(cm)} cm Wasser` : 'unter 10 cm'}</b>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="fine">{report.flood.data.note}{report.flood.data.heavyRain ? ` Starkregen: ${report.flood.data.heavyRain.note}` : ''}</p>
+              <SourceLine ids={[report.flood.data.sourceId ?? 'bfg_flood', ...(report.flood.data.heavyRain ? ['bkg_starkregen'] : [])]} dataDate={report.flood.data.reportYear ? `Berichtsjahr ${report.flood.data.reportYear}` : null} fetchedAt={report.flood.data.fetchedAt} />
             </>
           ) : (
             <p className="muted">{report.flood.data.note}</p>
@@ -372,7 +383,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
                 <p className="muted">{['Wien', 'Schweiz', 'Steiermark', 'Vorarlberg', 'Tirol', 'Kärnten'].includes(report.planning.data.region ?? '') ? 'An diesem Punkt ist keine Widmung bzw. Bauzone verzeichnet.' : ['Nordrhein-Westfalen', 'Baden-Württemberg'].includes(report.planning.data.region ?? '') ? 'Im Landesdienst ist hier kein Bebauungsplan gemeldet. Nicht jede Kommune liefert ihre Pläne dorthin; im Zweifel bei der Gemeinde nachfragen.' : 'Kein Bebauungsplan an diesem Punkt verzeichnet.'}</p>
               )}
               <p className="fine">Ein Plan im Verfahren ist keine genehmigte Baumaßnahme. Rechtsverbindlich ist nur das Originaldokument.</p>
-              <SourceLine ids={[PLANNING_SOURCE[report.planning.data.region ?? ''] ?? 'be_bplan']} fetchedAt={report.planning.data.fetchedAt} />
+              <SourceLine ids={report.planning.data.plans.length ? [...new Set(report.planning.data.plans.map((p) => p.sourceId))] : [PLANNING_SOURCE[report.planning.data.region ?? ''] ?? 'be_bplan']} fetchedAt={report.planning.data.fetchedAt} />
             </>
           ) : (
             <p className="muted">
@@ -380,6 +391,14 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
               <a href={report.planning.data.portal?.url} target="_blank" rel="noopener noreferrer">
                 {report.planning.data.portal?.label} <ExternalLink size={11} />
               </a>
+              {report.planning.data.extraLinks?.map((l) => (
+                <span key={l.url}>
+                  {' · '}
+                  <a href={l.url} target="_blank" rel="noopener noreferrer">
+                    {l.label} <ExternalLink size={11} />
+                  </a>
+                </span>
+              ))}
             </p>
           )
         ) : (
@@ -394,7 +413,7 @@ export function ReportView({ report, previous }: { report: EnvReport; previous?:
               <ul className="plans">
                 {report.landValue.data.values.map((v, k) => (
                   <li key={k}>
-                    <b>{v.valueEurPerSqm.toLocaleString('de-DE')} €/m²</b>
+                    <b>{formatLandValue(v)}</b>
                     <small>
                       {v.usage ?? 'Nutzung unbekannt'} · Stichtag {date(v.referenceDate)} · {v.district ?? v.municipality ?? ''}
                       {v.documentUrl && (

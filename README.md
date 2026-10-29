@@ -65,15 +65,15 @@ public/images/  Fotos (Unsplash, siehe CREDITS.md)
 
 ## Bekannte Einschränkungen
 
-- **Bebauungspläne/Widmung:** Bebauungspläne für Hamburg, Berlin, NRW und Baden-Württemberg (landesweite INSPIRE-Dienste, soweit Kommunen liefern); Flächenwidmung für Wien, Steiermark, Vorarlberg, Tirol, Kärnten, Oberösterreich (Kartenebene); Bauzonen Schweiz. Andernorts Link zum zuständigen Portal.
-- **Bodenrichtwerte** sind für NRW, Hessen, Berlin, Brandenburg, Thüringen, Sachsen, Niedersachsen, Sachsen-Anhalt und Mecklenburg-Vorpommern angebunden, Hamburg als Kartenebene. Bayern, Baden-Württemberg, Saarland, Bremen, Schleswig-Holstein und Rheinland-Pfalz geben keinen frei nutzbaren Dienst her (Gründe in docs/QUELLEN.md), dort Link zum Portal. Österreich und die Schweiz haben kein vergleichbares offenes System.
+- **Bebauungspläne/Widmung:** Bebauungspläne für Hamburg, Berlin, NRW und Baden-Württemberg (landesweite INSPIRE-Dienste, soweit Kommunen liefern), Flächennutzungsplan Baden-Württemberg landesweit, in Bayern direkter Link zur Bauleitplanung der Gemeinde; Flächenwidmung für Wien, Steiermark, Vorarlberg, Tirol, Kärnten, Oberösterreich (Kartenebene); Bauzonen Schweiz. Andernorts Link zum zuständigen Portal.
+- **Bodenrichtwerte** sind für NRW, Hessen, Berlin, Brandenburg, Thüringen, Sachsen, Niedersachsen, Sachsen-Anhalt und Mecklenburg-Vorpommern angebunden, Hamburg als normierte Spanne je Baublock. Bayern, Baden-Württemberg, Saarland, Bremen, Schleswig-Holstein und Rheinland-Pfalz geben keinen frei nutzbaren Dienst her (Gründe in docs/QUELLEN.md), dort Link zum Portal. Österreich und die Schweiz haben kein vergleichbares offenes System.
 - **Fahrpläne:** Fern-, Regional- und Nahverkehr in ganz Deutschland (Stichtag Mittwoch 04.11.2026, Sollfahrplan). Neu aufbereiten: `node tools/data/build-transit.mjs <Ordner mit GTFS-ZIPs von gtfs.de>`.
 - **Luftqualität:** Deutschland Jahresmittel 2025 der UBA-Stationen (`node tools/data/build-air.mjs 2025`), Österreich aus der EEA-Jahresstatistik (`node tools/data/build-air-eea.mjs AT 2025`), Schweiz als modellierte Klasse am Punkt (BAFU-Karten).
-- **Hochwasser:** Deutschland BfG-Gefahrenflächen, Schweiz Aquaprotect (grobe Übersicht), jeweils ohne Starkregen. Österreich: amtliche Überflutungsflächen HQ30/100/300 werden aufbereitet.
+- **Hochwasser und Starkregen:** Deutschland BfG-Gefahrenflächen überall; Starkregen-Wassertiefe aus der BKG-Hinweiskarte in 14 Ländern (Bayern nur als Kartenebene, Baden-Württemberg ohne landesweite offene Karte). Schweiz Aquaprotect (grobe Übersicht). Österreich: amtliche Überflutungsflächen HQ30/100/300 sind vorbereitet, aber noch nicht fertig aufbereitet.
 - **Lärm:** EU-Kartierung 2022 deckt Ballungsräume und Hauptverkehrswege ab; „keine Klasse“ heißt nicht „ruhig“. Zusätzlich wird ein Ring von 75 m abgetastet.
 - **Baustellen** kommen aus OpenStreetMap und sind unvollständig; Autobahn-Baustellen nur als Link.
 - **Ratsvorlagen** gibt es nur für Kommunen mit OParl-Schnittstelle; Vorlagen sind nicht verortet.
-- **Overpass** (OpenStreetMap) ist ein öffentlicher, teils überlasteter Dienst; dann bitte später „Neu prüfen“.
+- **Umgebung (OpenStreetMap):** kommt aus den Vektorkacheln von OpenFreeMap (CDN, dieselben Daten wie die Karte), damit sie unabhängig von den oft überlasteten Overpass-Servern funktioniert. Overpass springt nur ein, wenn die Kacheln nicht erreichbar sind. Gebäude-Baustellen fehlen in den Kacheln.
 - **Auf GitHub Pages** gibt es keinen Import-Server; Linkabruf geht nur lokal mit `npm run dev`.
 - **Automatische Beobachtung** ist vorbereitet, aber deaktiviert, solange keine Quelle wiederholte Abrufe ausdrücklich erlaubt.
 - **Lizenz des Codes:** Noch keine Lizenzdatei. Bis eine gewählt ist, gilt: Code ansehen ja, übernehmen nein.

@@ -158,7 +158,8 @@ export function ruleSummary(r: EnvReport): { facts: string[]; hints: string[]; g
     const t = r.transit?.data
     if (t.ovClass) facts.push(`ÖV-Güteklasse: ${t.ovClass} (Bundesamt für Raumentwicklung).`)
     if (t.departures500 !== null && !t.partial) facts.push(`${t.departures500.toLocaleString('de-DE')} Abfahrten pro Werktag an Haltestellen bis 500 m (Sollfahrplan, gtfs.de).`)
-    if (t.partial) hints.push('Fahrplandaten bisher nur für Fern- und Regionalverkehr; Bus, Tram und U-Bahn folgen.')
+    if (t.departures500 !== null && t.partial && /Wiener Linien/.test(t.note)) facts.push(`${t.departures500.toLocaleString('de-DE')} Abfahrten der Wiener Linien pro Werktag an Haltestellen bis 500 m (Sollfahrplan, ohne ÖBB).`)
+    else if (t.partial) hints.push(t.note)
     if (t.nearestLongDistance) facts.push(`Nächster Fernverkehrshalt: ${t.nearestLongDistance.name} in ${fmtM(t.nearestLongDistance.distanceM)}.`)
   }
 

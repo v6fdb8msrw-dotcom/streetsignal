@@ -65,7 +65,20 @@ async function gtfsStops(lat: number, lng: number, radiusM: number): Promise<{ s
     .map(([sLat, sLng, name, departures, modes]) => ({ name, lat: sLat, lng: sLng, departures, modes, distanceM: distanceM([lat, lng], [sLat, sLng]) }))
     .filter((s) => s.distanceM <= radiusM)
     .sort((a, b) => a.distanceM - b.distanceM)
-  return { stops, date: tiles[0]?.date ?? null, feeds: tiles[0]?.feeds ?? [] }
+  return { stops: mergeSameName(stops), date: tiles[0]?.date ?? null, feeds: tiles[0]?.feeds ?? [] }
+}
+
+/** Steige derselben Station (gleicher Name, höchstens 300 m auseinander) zu einem Eintrag zusammenfassen */
+export function mergeSameName(stops: TransitStop[]): TransitStop[] {
+  const out: TransitStop[] = []
+  for (const s of stops) {
+    const same = out.find((o) => o.name === s.name && distanceM([o.lat, o.lng], [s.lat, s.lng]) <= 300)
+    if (same) {
+      same.departures += s.departures
+      same.modes = [...new Set((same.modes + s.modes).split(''))].sort().join('')
+    } else out.push({ ...s })
+  }
+  return out
 }
 
 export async function fetchTransit(lat: number, lng: number, country: string | null): Promise<TransitResult> {
@@ -88,11 +101,28 @@ export async function fetchTransit(lat: number, lng: number, country: string | n
       note: cls ? 'ÖV-Güteklassen A (sehr gut) bis D (gering) bewerten Takt und Art der Haltestellen in der Umgebung.' : 'Keine ÖV-Güteklasse: Der Ort liegt außerhalb der erschlossenen Gebiete.',
     }
   }
-  if (country && country !== 'DE')
-    return { covered: false, source: null, ovClass: null, stops: [], departures500: null, nearestLongDistance: null, dataDate: null, note: 'Fahrplandaten sind bisher nur für Deutschland aufbereitet.' }
+  if (country && country !== 'DE' && country !== 'AT')
+    return { covered: false, source: null, ovClass: null, stops: [], departures500: null, nearestLongDistance: null, dataDate: null, note: 'Fahrplandaten sind für dieses Land nicht aufbereitet.' }
   const near = await gtfsStops(lat, lng, 1000)
   const far = await gtfsStops(lat, lng, 25000)
   const within500 = near.stops.filter((s) => s.distanceM <= 500)
+  if (country === 'AT') {
+    // Nur das Netz der Wiener Linien ist aufbereitet; in Grenznähe enthalten die deutschen Feeds sonst einzelne Halte
+    const inVienna = lat > 48.1 && lat < 48.34 && lng > 16.17 && lng < 16.6
+    if (!near.stops.length || !inVienna)
+      return { covered: false, source: null, ovClass: null, stops: [], departures500: null, nearestLongDistance: null, dataDate: null, note: 'In Österreich sind ohne Anmeldung nur die Fahrpläne der Wiener Linien frei verfügbar. Der landesweite Datensatz der Verkehrsverbünde braucht ein Konto und hat eine eigene Lizenz, deshalb ist er nicht eingebunden.' }
+    return {
+      partial: true,
+      covered: true,
+      source: 'gtfs',
+      ovClass: null,
+      stops: near.stops.slice(0, 8),
+      departures500: within500.reduce((a, s) => a + s.departures, 0),
+      nearestLongDistance: null,
+      dataDate: near.date,
+      note: 'Abfahrten der Wiener Linien (U-Bahn, Straßenbahn, Bus) an einem normalen Werktag laut Sollfahrplan. ÖBB-Züge und S-Bahn fehlen, die Zahl ist daher eher zu niedrig.',
+    }
+  }
   const partial = !(near.feeds.length ? near.feeds : far.feeds).includes('nv')
   return {
     partial,

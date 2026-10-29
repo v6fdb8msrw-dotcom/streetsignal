@@ -1,6 +1,7 @@
 import { Bot, Download, ExternalLink, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ollamaStatus, type OllamaStatus } from '../services/ollama.ts'
+import { COMMON_CELLS, COUNTRY_NOTE, COVERAGE, TOPIC_LABEL, type CoverageTopic } from '../sources/coverage.ts'
 import { DATA_SOURCES, PORTALS } from '../sources/registry.ts'
 import { db, getSetting, listPlaces, listProperties, setSetting } from '../store/db.ts'
 import { useUi } from '../store/ui.ts'
@@ -9,6 +10,7 @@ export function Sources() {
   const bump = useUi((s) => s.bump)
   const [hosts, setHosts] = useState<string[]>([])
   const [ollama, setOllama] = useState<OllamaStatus | null>(null)
+  const [country, setCountry] = useState<'DE' | 'AT' | 'CH'>('DE')
   useEffect(() => {
     getSetting<string[]>('permittedHosts', []).then(setHosts)
     ollamaStatus().then(setOllama)
@@ -27,8 +29,46 @@ export function Sources() {
       <header className="page-head">
         <p className="eyebrow">Datenquellen & Einstellungen</p>
         <h1>Woher jede Angabe kommt</h1>
-        <p className="lead">StreetSignal nutzt nur kostenlose Quellen, deren Lizenz die Nutzung erlaubt. Geprüft am 26.10.2026. Was ohne ausdrückliche Erlaubnis ist, wird nur verlinkt.</p>
+        <p className="lead">StreetSignal nutzt nur kostenlose Quellen, deren Lizenz die Nutzung erlaubt. Geprüft bis 29.10.2026. Was ohne ausdrückliche Erlaubnis ist, wird nur verlinkt.</p>
       </header>
+
+      <h2 className="section-title">Abdeckung je Region</h2>
+      <div className="seg" role="tablist">
+        {(['DE', 'AT', 'CH'] as const).map((c) => (
+          <button key={c} role="tab" aria-selected={country === c} className={country === c ? 'on' : ''} onClick={() => setCountry(c)}>
+            {c === 'DE' ? 'Deutschland' : c === 'AT' ? 'Österreich' : 'Schweiz'}
+          </button>
+        ))}
+      </div>
+      <p className="fine">{COUNTRY_NOTE[country]}</p>
+      <div className="card table-wrap">
+        <table className="sources coverage">
+          <thead>
+            <tr>
+              <th>Region</th>
+              {(Object.keys(TOPIC_LABEL) as CoverageTopic[]).map((k) => (
+                <th key={k}>{TOPIC_LABEL[k]}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {COVERAGE.filter((r) => r.country === country).map((r) => (
+              <tr key={r.region}>
+                <td><b>{r.region}</b></td>
+                {(Object.keys(TOPIC_LABEL) as CoverageTopic[]).map((k) => (
+                  <td key={k} title={r.cells[k].note}>
+                    <span className={`badge cov-${r.cells[k].level.replace(/\s/g, '-')}`}>{r.cells[k].level}</span>
+                    {!COMMON_CELLS.has(r.cells[k]) && <small>{r.cells[k].note}</small>}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="fine">„direkt“ = Wert am Punkt aus einer frei lizenzierten Quelle. „teilweise“ = nur ein Teil der Gemeinden, nur Kartenebene oder grobe Übersicht. „Link“ = keine freie Nutzung erlaubt oder kein Dienst; StreetSignal verlinkt das amtliche Portal.</p>
+
+      <h2 className="section-title">Alle Quellen</h2>
 
       <div className="card table-wrap">
         <table className="sources">
